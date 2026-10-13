@@ -1,10 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 90">
 <rect width="320" height="90" fill="#fff"/>
-<g font-family="sans-serif" font-size="12" fill="#1f2620" text-anchor="middle">
-<circle cx="35" cy="40" r="14" fill="#e3efe7" stroke="#1f2620" stroke-width="1.5"/><text x="35" y="44">1</text>
-<circle cx="115" cy="40" r="14" fill="#e3efe7" stroke="#1f2620" stroke-width="1.5"/><text x="115" y="44">2</text>
-<circle cx="195" cy="40" r="14" fill="#e3efe7" stroke="#1f2620" stroke-width="1.5"/><text x="195" y="44">3</text>
-<circle cx="275" cy="40" r="14" fill="#e3efe7" stroke="#1f2620" stroke-width="1.5"/><text x="275" y="44">4</text>
+<g fill="#e3efe7" stroke="#1f2620" stroke-width="1.5">
+<circle cx="35" cy="40" r="14"/><circle cx="115" cy="40" r="14"/><circle cx="195" cy="40" r="14"/><circle cx="275" cy="40" r="14"/>
 </g>
 <ellipse cx="35" cy="40" rx="7" ry="4" fill="#9a7449"/>
 <g stroke="#3f7a3f" stroke-width="2"><line x1="115" y1="48" x2="115" y2="34"/></g>

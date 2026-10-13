@@ -171,7 +171,9 @@ function textQ(sec,it){
   wrap.append(lab,ta);
   if(it.t==="key"){
     const f=fb(); wrap.append(f);
-    markers.push(()=>{ const v=norm(cur().answers[it.id]).toLowerCase(); const ok=it.keys.some(k=>new RegExp("\\b"+k+"\\b").test(v));
+    const escRe=(s)=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    markers.push(()=>{ const raw=norm(cur().answers[it.id]); const v=it.cs?raw:raw.toLowerCase();
+      const ok=it.keys.some(k=>new RegExp("\\b"+escRe(k)+"\\b").test(v));
       ta.classList.toggle("right",ok); ta.classList.toggle("wrong",!ok); setFb(f,ok,"Answer: "+it.model);
       return {got:ok?m:0,max:m,sec:sec.id,topic,label:it.id,answer:it.model}; });
   } else {

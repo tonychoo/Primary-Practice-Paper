@@ -71,7 +71,7 @@ window.PAPER = {
   {id:"43b",t:"parent",q:"(b) Second thing she did",model:"She helped him plan a new route back to the interchange.",m:1},
   {id:"44",t:"parent",q:"Why did Kumar not notice the train doors opening at the interchange?",model:"He was staring out of the window and did not notice the doors opening.",m:1},
   {id:"45",t:"parent",q:"How do you know that Auntie Wong was happy to see Kumar?",model:"She was waiting with a wide smile and said, “You made it on your own!” proudly.",m:1},
-  {id:"46",t:"key",q:"Which word in the last paragraph means “admitted or confessed”?",keys:["admitted"],model:"admitted",m:1},
+  {id:"46",t:"key",q:"Which word in the last paragraph means “confessed”?",keys:["admitted"],model:"admitted",m:1},
   {id:"47",t:"mcq",q:"How did Kumar feel when he realised the train doors had closed without him?",o:["Excited","Proud","Worried","Bored"],a:2},
   {id:"48",t:"parent",q:"What lesson did Kumar learn from his MRT adventure?",model:"He learned to read the train map properly and pay attention so that he would not miss his stop again.",m:1}
  ]}

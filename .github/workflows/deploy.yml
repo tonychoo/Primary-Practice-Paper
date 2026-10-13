@@ -39,7 +39,10 @@ jobs:
       - name: Collect site files
         run: |
           mkdir _site
-          cp -r index.html privacy.html 404.html robots.txt .nojekyll assets english _site/
+          rsync -a --exclude='.git' --exclude='.github' --exclude='scripts' --exclude='_site' \
+            --exclude='CLAUDE.md' --exclude='README.md' --exclude='SECURITY.md' \
+            --exclude='.gitignore' --exclude='.gitattributes' --exclude='.editorconfig' \
+            ./ _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

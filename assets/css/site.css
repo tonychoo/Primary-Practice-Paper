@@ -76,9 +76,15 @@ legend{padding:0;font-weight:700}
 .numrow{display:flex;gap:8px;align-items:center}
 .numrow input{width:9em}
 .unit{color:var(--muted);font-weight:700}
+.numnote{font-size:.85rem;color:var(--bad)}
 .work{display:flex;flex-direction:column;gap:4px}
 .work textarea{min-height:5em}
 .work label{font-size:.88rem;color:var(--muted)}
+
+/* optional hints */
+.hintbox{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.hintbox button{padding:3px 12px;font-size:.85rem}
+.hinttext{margin:0;background:var(--warn-soft);border-radius:8px;padding:8px 10px;font-size:.92rem}
 
 /* listening */
 .listen-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--accent-soft);border-radius:10px;padding:10px 12px}

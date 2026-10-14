@@ -99,6 +99,7 @@ Every item accepts these optional fields, on top of the fields its type needs:
 |---|---|
 | `m` | Marks this item is worth. Defaults to 1. For `parent` items with `m > 1`, a parent gets buttons `0…m` instead of yes/no. |
 | `topic` | A short revision tag (e.g. `"fractions"`, `"life cycles"`). Groups the "Questions to revisit" list in the results. Defaults to the section title. |
+| `hint` | A string shown behind a "Show hint" button, on `mcq`/`picture-mcq`, `num`, `key` and `parent` items. Teach the *approach*, not the answer (e.g. `"Count on to the next o'clock first."`). Recorded in the attempt once opened, and shown as "N hints used" in the results. Hints never print on the question paper; the answer key prints them after the model answer. |
 | `img` | `{src, alt}`. Shows an image above the question. `src` is written relative to the repo root (e.g. `"assets/img/maths/clock-1.svg"`) and resolves correctly regardless of the page's folder depth. `alt` is required. |
 | `working` | `true` adds a "Show your working" box (saved, never auto-marked). Only meaningful on `parent` and `num` items. |
 
@@ -159,7 +160,9 @@ is worth 5, with part marks) — `m` is ignored in this mode.
 
 **`num`** — a numeric answer with an optional unit, compared as a number (not text). Accepts "1 200",
 "1,200" and "1200"; "0.5" and ".5"; "$3.50" and "3.5"; and fractions like "3/4". List any other accepted
-value in `ans`.
+value in `ans`. If the box holds anything with extra letters mixed in (e.g. "3/5v"), a small inline note
+appears as the pupil types ("Check: numbers only"), and the Finish confirmation lists how many answers
+still have one — this is a nudge only and never changes how the answer is marked.
 ```js
 { id:"12", t:"num", q:"A pencil costs 45¢. How much do 3 pencils cost?", unit:"$", ans:["1.35"], m:2, working:true, topic:"money" }
 ```

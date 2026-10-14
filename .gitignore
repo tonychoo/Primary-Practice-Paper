@@ -5,3 +5,6 @@ node_modules/
 *.log
 .vscode/
 .idea/
+
+# Private reference material (e.g. a textbook word list): never published, never committed.
+content-sources/

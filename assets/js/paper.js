@@ -18,17 +18,18 @@ function writeStore(){
   catch(e){ storageOK = false; document.getElementById("saveNote").textContent = "Saving is turned off in this browser (private browsing?). Answers will be lost when you close the page."; }
 }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
-function makeSession(name){ const id=uid(); return {id, name:(name||"Pupil").slice(0,40), created:new Date().toISOString(), answers:{}, parent:{}, working:{}, plays:{}, submitted:false}; }
+function makeSession(name){ const id=uid(); return {id, name:(name||"Pupil").slice(0,40), created:new Date().toISOString(), answers:{}, parent:{}, working:{}, plays:{}, hints:{}, pendingMarks:0, submitted:false}; }
 
 let store = readStore();
 if(!store){ const s=makeSession(""); store={version:1,current:s.id,sessions:{[s.id]:s}}; }
 if(!store.sessions[store.current]){ const ids=Object.keys(store.sessions); if(ids.length) store.current=ids[0]; else { const s=makeSession(""); store.sessions[s.id]=s; store.current=s.id; } }
-const cur = ()=>{ const s=store.sessions[store.current]; if(!s.working) s.working={}; if(!s.plays) s.plays={}; return s; };
+const cur = ()=>{ const s=store.sessions[store.current]; if(!s.working) s.working={}; if(!s.plays) s.plays={}; if(!s.hints) s.hints={}; if(s.pendingMarks==null) s.pendingMarks=0; return s; };
 
 /* ---------- Build the paper (all text set with textContent) ---------- */
 const paper = document.getElementById("paper");
 const controls = [];        // every bound answer input, for enable/disable and the "blanks left" check
 const workingControls = []; // "show your working" boxes: saved, never required, never marked
+const numNotes = [];         // {inp,note} for every `num` item: a live "numbers only" check
 const markers = [];         // functions that mark one item: return {got,max,sec,topic,label,answer,pending}
 function el(tag, cls, text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
 function fb(){ return el("div","fb"); }
@@ -63,6 +64,22 @@ function workingBox(it){
 }
 function norm(v){ return String(v||"").trim().replace(/[.!]+$/,"").replace(/\s+/g," "); }
 
+/* An optional "Show hint" disclosure on any item. Records in the attempt whether it was opened
+   (never whether it was re-hidden), so it can show as "hint used" in the results. Hints never
+   appear in the printed question paper; the answer key prints them (see printItem). */
+function hintBox(it){
+  if(!it.hint) return null;
+  const d=el("div","hintbox noprint");
+  const btn=el("button",null,"Show hint"); btn.type="button";
+  const p=el("p","hinttext"); p.hidden=true; p.textContent=it.hint;
+  btn.addEventListener("click", ()=>{
+    p.hidden=!p.hidden; btn.textContent = p.hidden ? "Show hint" : "Hide hint";
+    if(!p.hidden && !cur().hints[it.id]){ cur().hints[it.id]=true; writeStore(); }
+  });
+  d.append(btn,p);
+  return d;
+}
+
 /* Parses a numeric answer, accepting "1 200", "1,200", "1200", "0.5", ".5", "$3.50", "3.5" and fractions "3/4". */
 function parseNum(str){
   if(str==null) return null;
@@ -76,10 +93,14 @@ function parseNum(str){
   const v = parseFloat(s);
   return Number.isFinite(v) ? v : null;
 }
+/* Live check for a `num` box: flags text that has extra letters mixed in with the number
+   (e.g. "3/5v"), without changing how the answer is actually marked (parseNum still decides that). */
+function updateNumNote(inp, note){ const raw=inp.value; note.hidden = !(raw.trim() && parseNum(raw)==null); }
 
 function mcq(sec,it){
   const m=it.m||1, topic=it.topic||sec.title;
   const fs=el("fieldset","q"); const lg=el("legend"); lg.append(el("span","qn",it.id+". "), document.createTextNode(it.q)); fs.append(lg);
+  const hb=hintBox(it); if(hb) fs.append(hb);
   if(it.img) appendImg(fs,it.img);
   const opts=el("div","opts"+(it.oImg?" opts-img":""));
   it.o.forEach((txt,j)=>{ const lab=el("label"); const r=document.createElement("input"); r.type="radio"; r.name="q"+it.id; r.value=String(j); r.id="q"+it.id+"_"+j;
@@ -148,11 +169,16 @@ function numQ(sec,it){
   const m=it.m||1, topic=it.topic||sec.title;
   const wrap=el("div","q"); const lab=el("label"); lab.append(el("span","qn",it.id+". "), document.createTextNode(it.q));
   wrap.append(lab);
+  const hb=hintBox(it); if(hb) wrap.append(hb);
   if(it.img) appendImg(wrap,it.img);
   const row=el("div","numrow");
   const inp=document.createElement("input"); inp.type="text"; inp.id="q"+it.id; inp.inputMode="decimal"; inp.autocomplete="off"; lab.htmlFor=inp.id; bindValue(inp,it.id);
   row.append(inp); if(it.unit) row.append(el("span","unit",it.unit));
   wrap.append(row);
+  const note=el("div","numnote"); note.hidden=true; note.textContent="Check: numbers only";
+  inp.addEventListener("input", ()=>updateNumNote(inp,note));
+  numNotes.push({inp,note});
+  wrap.append(note);
   const f=fb(); wrap.append(f);
   if(it.working) wrap.append(workingBox(it));
   markers.push(()=>{ const uv=parseNum(cur().answers[it.id]);
@@ -166,9 +192,11 @@ function numQ(sec,it){
 function textQ(sec,it){
   const m=it.m||1, topic=it.topic||sec.title;
   const wrap=el("div","q"); const lab=el("label"); lab.append(el("span","qn",it.id+". "), document.createTextNode(it.q));
+  wrap.append(lab);
+  const hb=hintBox(it); if(hb) wrap.append(hb);
   if(it.img) appendImg(wrap,it.img);
   const ta=document.createElement("textarea"); ta.id="q"+it.id; ta.rows=2; lab.htmlFor=ta.id; bindValue(ta,it.id);
-  wrap.append(lab,ta);
+  wrap.append(ta);
   if(it.t==="key"){
     const f=fb(); wrap.append(f);
     const escRe=(s)=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
@@ -326,6 +354,7 @@ function applySession(){
     if(c.type==="radio") c.checked = (v===c.value); else c.value = v==null?"":v;
     c.disabled = !!s.submitted; c.classList.remove("right","wrong"); });
   workingControls.forEach(c=>{ const v=s.working[c.dataset.key]; c.value=v==null?"":v; c.disabled=!!s.submitted; });
+  numNotes.forEach(({inp,note})=>updateNumNote(inp,note));
   document.querySelectorAll(".fb").forEach(f=>{f.textContent="";f.className="fb";});
   document.querySelectorAll(".pmark").forEach(p=>p.hidden=true);
   document.querySelectorAll(".listen").forEach(w=>{ if(w._listenUpdate) w._listenUpdate(); });
@@ -337,22 +366,32 @@ function applySession(){
 function renderSelect(){
   const sel=document.getElementById("sessionSelect"); sel.textContent="";
   Object.values(store.sessions).sort((a,b)=>a.created<b.created?1:-1).forEach(s=>{
-    const d=new Date(s.created); const label=s.name+" · "+d.toLocaleDateString("en-SG",{day:"numeric",month:"short"})+" "+d.toLocaleTimeString("en-SG",{hour:"numeric",minute:"2-digit"})+(s.submitted?" · "+(s.score!=null?s.score+"/"+PAPER.total:"marked"):" · in progress");
+    const d=new Date(s.created); const scoreLabel = s.score!=null ? (s.score+"/"+PAPER.total+(s.pendingMarks?" + "+s.pendingMarks+" to mark":"")) : "marked";
+    const label=s.name+" · "+d.toLocaleDateString("en-SG",{day:"numeric",month:"short"})+" "+d.toLocaleTimeString("en-SG",{hour:"numeric",minute:"2-digit"})+(s.submitted?" · "+scoreLabel:" · in progress");
     const o=el("option",null,label); o.value=s.id; if(s.id===store.current) o.selected=true; sel.append(o); });
 }
 function renderResults(){
   const box=document.getElementById("results"); const s=cur();
   if(!s.submitted){ box.hidden=true; return; }
-  const per={}; let total=0, pending=0; const revisit={};
+  const per={}; let total=0, pending=0, pendingMarks=0, firstPendingId=null; const revisit={};
   SECTIONS.forEach(sec=>per[sec.id]={got:0,max:sec.marks,title:sec.title});
   markers.forEach(m=>{ const r=m(); if(r.max){ per[r.sec].got+=r.got; total+=r.got;
       if(r.got<r.max && !r.pending && r.label){ const t=r.topic||per[r.sec].title; (revisit[t]=revisit[t]||[]).push(r.label); } }
-    if(r.pending) pending++; });
-  s.score = total; writeStore(); renderSelectLabelsOnly();
+    if(r.pending){ pending++; pendingMarks+=r.max; if(firstPendingId==null) firstPendingId=r.label; } });
+  s.score = total; s.pendingMarks = pending ? pendingMarks : 0; writeStore(); renderSelectLabelsOnly();
   box.textContent="";
   box.append(el("div","eyebrow","Results for "+s.name));
-  box.append(el("div","total",total+" / "+PAPER.total));
-  if(pending) box.append(el("div","muted",pending+" written answers are waiting for a parent to mark. Scroll to each one and choose “Give the mark” or “No mark”."));
+  if(pending){
+    box.append(el("div","total","Score so far: "+total+" / "+PAPER.total+" ("+pendingMarks+" mark"+(pendingMarks===1?"":"s")+" waiting for a parent to mark)"));
+    const goBtn=el("button",null,"Go to first unmarked answer"); goBtn.type="button";
+    goBtn.addEventListener("click",()=>{ const target=document.getElementById("q"+firstPendingId); if(target){ target.scrollIntoView({behavior:"smooth",block:"center"});
+      const markBtn = target.closest(".q").querySelector(".pmark button"); if(markBtn) markBtn.focus(); } });
+    box.append(goBtn);
+  } else {
+    box.append(el("div","total",total+" / "+PAPER.total));
+  }
+  const hintIds=Object.keys(s.hints||{}).filter(k=>s.hints[k]);
+  if(hintIds.length) box.append(el("div","muted",hintIds.length+" hint"+(hintIds.length===1?"":"s")+" used: "+hintIds.join(", ")));
   const tw=el("div","tablewrap"); const t=el("table"); const th=el("tr"); th.append(el("th",null,"Section"), el("th","n","Score")); t.append(th);
   Object.values(per).forEach(p=>{ const tr=el("tr"); tr.append(el("td",null,p.title), el("td","n",p.got+" / "+p.max)); t.append(tr); });
   tw.append(t); box.append(tw);
@@ -407,11 +446,14 @@ document.getElementById("importFile").addEventListener("change",e=>{
       let n=0;
       Object.values(data.sessions).forEach(s=>{ if(!s||typeof s!=="object") return;
         const clean={id:uid(),name:String(s.name||"Pupil").slice(0,40),created:String(s.created||new Date().toISOString()),
-          answers:{},parent:{},working:{},plays:{},submitted:!!s.submitted};
+          answers:{},parent:{},working:{},plays:{},hints:{},pendingMarks:0,submitted:!!s.submitted};
         if(s.answers&&typeof s.answers==="object") Object.keys(s.answers).forEach(k=>{ if(/^w?\d{1,2}[abc]?$/.test(k)) clean.answers[k]=String(s.answers[k]).slice(0,500); });
         if(s.parent&&typeof s.parent==="object") Object.keys(s.parent).forEach(k=>{ if(/^\d{1,2}[ab]?$/.test(k)){ const v=Number(s.parent[k]); clean.parent[k]=Number.isFinite(v)&&v>=0?v:0; } });
         if(s.working&&typeof s.working==="object") Object.keys(s.working).forEach(k=>{ if(/^w\d{1,2}[ab]?$/.test(k)) clean.working[k]=String(s.working[k]).slice(0,2000); });
         if(s.plays&&typeof s.plays==="object") Object.keys(s.plays).forEach(k=>{ const v=Number(s.plays[k]); if(Number.isFinite(v)) clean.plays[k]=v; });
+        if(s.hints&&typeof s.hints==="object") Object.keys(s.hints).forEach(k=>{ if(/^\d{1,2}[ab]?$/.test(k) && s.hints[k]) clean.hints[k]=true; });
+        if(Number.isFinite(Number(s.pendingMarks))) clean.pendingMarks=Math.max(0,Number(s.pendingMarks));
+        if(typeof s.score==="number") clean.score=s.score;
         store.sessions[clean.id]=clean; n++; });
       writeStore(); applySession(); document.getElementById("saveNote").textContent="Restored "+n+" attempt"+(n===1?"":"s")+".";
     }catch(err){ document.getElementById("saveNote").textContent="That file is not a backup from this page."; }
@@ -423,7 +465,11 @@ document.getElementById("importFile").addEventListener("change",e=>{
 const answerKeys = controls.reduce((set,c)=>set.add(c.dataset.key),new Set());
 document.getElementById("finishBtn").addEventListener("click",()=>{
   const blanks=[...answerKeys].filter(k=>!norm(cur().answers[k])).length;
-  if(blanks){ document.getElementById("finishText").textContent="You left "+blanks+" answer"+(blanks===1?"":"s")+" blank. Mark the paper anyway?"; document.getElementById("finishConfirm").hidden=false; }
+  const stray=numNotes.filter(({inp})=>inp.value.trim() && parseNum(inp.value)==null).length;
+  const msgs=[];
+  if(blanks) msgs.push("You left "+blanks+" answer"+(blanks===1?"":"s")+" blank.");
+  if(stray) msgs.push(stray+" answer"+(stray===1?" has":"s have")+" extra letters – fix "+(stray===1?"it":"them")+"?");
+  if(msgs.length){ document.getElementById("finishText").textContent=msgs.join(" ")+" Mark the paper anyway?"; document.getElementById("finishConfirm").hidden=false; }
   else submit();
 });
 document.getElementById("finishNo").addEventListener("click",()=>{ document.getElementById("finishConfirm").hidden=true; });
@@ -457,17 +503,18 @@ function printTable(heads, rows){ const t=el("table"); const tr=el("tr"); heads.
   rows.forEach(r=>{ const row=el("tr"); r.forEach((c)=>{ const td=el("td",c==="__fill"?"fill":null,c==="__fill"?"":c); row.append(td); }); t.append(row); }); return t; }
 function printItem(it, paperDoc, keyRows){
   const m = it.m||1;
+  const hintNote = it.hint ? " | Hint: "+it.hint : ""; // hints are answer-key only, never on the question paper
   if(it.t==="mcq" || it.t==="picture-mcq"){
     const q=el("div","pq"); const p=el("p"); p.append(el("b",null,it.id+". "), document.createTextNode(it.q+" "), el("span","bracket","(    )"));
     q.append(p); if(it.img) appendImg(q,it.img,"pimg");
     const o=el("div","opts"); it.o.forEach((t,j)=>{ const sp=el("span",null,"("+(j+1)+") "+t); if(it.oImg&&it.oImg[j]) appendImg(sp,it.oImg[j],"poptimg"); o.append(sp); }); q.append(o); paperDoc.append(q);
-    keyRows.push([it.id,"("+(it.a+1)+") "+it.o[it.a], String(m)]);
+    keyRows.push([it.id,"("+(it.a+1)+") "+it.o[it.a]+hintNote, String(m)]);
   } else if(it.t==="num"){
     const q=el("div","pq"); const p=el("p"); p.append(el("b",null,it.id+". "), document.createTextNode(it.q+" ("+m+" mark"+(m>1?"s":"")+")"));
     q.append(p); if(it.img) appendImg(q,it.img,"pimg");
     const row=el("div","numline"); row.append(el("span","blank"," "), document.createTextNode(it.unit?" "+it.unit:""));
     q.append(row); if(it.working) q.append(el("div","work")); paperDoc.append(q);
-    keyRows.push([it.id, it.ans[0]+(it.unit?" "+it.unit:""), String(m)]);
+    keyRows.push([it.id, it.ans[0]+(it.unit?" "+it.unit:"")+hintNote, String(m)]);
   } else if(it.t==="cloze"){
     const q=el("div","pq"); if(it.title) q.append(el("h3",null,it.title));
     if(it.box){ const b=el("div","pbox"); it.box.forEach(w=>b.append(el("span",null,w))); q.append(b); }
@@ -501,7 +548,7 @@ function printItem(it, paperDoc, keyRows){
     q.append(p); if(it.img) appendImg(q,it.img,"pimg");
     q.append(printLines(it.t==="key"?1:2)); if(it.working) q.append(el("div","work")); paperDoc.append(q);
     const guide = (it.t==="parent" && m>1) ? " — Marking guide: "+(it.guide||("award part marks for a partly correct answer; "+m+" marks for a full, accurate answer")) : "";
-    keyRows.push([it.id, it.model+guide, String(m)]);
+    keyRows.push([it.id, it.model+guide+hintNote, String(m)]);
   }
 }
 function buildPrintDocs(){

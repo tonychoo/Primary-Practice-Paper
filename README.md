@@ -79,6 +79,18 @@ window.PAPER = {
 };
 ```
 
+### Section fields
+
+Alongside `id`, `title`, `marks`, `inst` and `items`, a section accepts two optional bilingual fields —
+useful for Chinese papers, where parents reading along may not read Chinese:
+
+```js
+{ id:"一", title:"识字", titleEn:"Vocabulary (choose the correct character)",
+  inst:"选出正确答案。", instEn:"Choose the correct answer.", marks:5, items:[ /* … */ ] }
+```
+Both render in a small muted line under the section heading/instructions, on screen and in the printed
+question paper. Page controls (Attempt, Finish, Print…) always stay in English regardless.
+
 ### Item fields (every type)
 
 Every item accepts these optional fields, on top of the fields its type needs:
@@ -133,10 +145,16 @@ capital-letter mistake.
   parts:[ {id:"38a", s:"(a) The shoot appeared after one week.", a:"T"}, {id:"38b", s:"(b) Mrs Lim scolded Hafiz.", a:"F"} ] }
 ```
 
-**`order`** — put events in the right order; one mark per event by default, or `m` for the whole item.
+**`order`** — put events in the right order. By default this is all-or-nothing, worth `m` (1 unless set).
+With `partial:true`, each event placed in its correct position earns 1 mark instead (so a 5-sentence item
+is worth 5, with part marks) — `m` is ignored in this mode.
 ```js
 { id:"39", t:"order", q:"Number the events from 1 to 3.",
   ev:[ {id:"39a", s:"Hafiz moved the pot near the window.", a:"3"}, {id:"39b", s:"The leaves turned brown.", a:"2"}, {id:"39c", s:"Hafiz forgot to water the plant.", a:"1"} ] }
+```
+```js
+{ id:"24", t:"order", partial:true, q:"Number the sentences 1 to 5 to form a paragraph.",
+  ev:[ {id:"24a", s:"...", a:"3"}, {id:"24b", s:"...", a:"1"}, /* …5 sentences, 1 mark each */ ] }
 ```
 
 **`num`** — a numeric answer with an optional unit, compared as a number (not text). Accepts "1 200",

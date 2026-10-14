@@ -89,7 +89,7 @@ for (const f of paperFiles) {
         return it.parts.length;
       case "order":
         addNumber(it.id);
-        return m;
+        return it.partial ? (it.ev || []).length : m;
       case "cloze": {
         Object.keys(it.ans).forEach(addNumber);
         if (it.box) {

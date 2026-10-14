@@ -213,15 +213,26 @@ function tfQ(sec,it){
   return wrap;
 }
 function orderQ(sec,it){
-  const m=it.m||1, topic=it.topic||sec.title;
+  const topic=it.topic||sec.title;
   const wrap=el("div","q"); wrap.append(el("div",null,it.id+". "+it.q));
   const g=el("div","ord"); const n=it.ev.length;
+  const selects=[];
   it.ev.forEach(e=>{ const lab=el("label",null,e.s); const s=document.createElement("select"); s.id="q"+e.id; lab.htmlFor=s.id;
     const opts=[""]; for(let v=1;v<=n;v++) opts.push(String(v));
-    opts.forEach(v=>{ const o=el("option",null,v||"–"); o.value=v; s.append(o); }); bindValue(s,e.id); g.append(lab,s); });
+    opts.forEach(v=>{ const o=el("option",null,v||"–"); o.value=v; s.append(o); }); bindValue(s,e.id); g.append(lab,s); selects.push([e,s]); });
   const f=fb(); wrap.append(g,f);
-  markers.push(()=>{ const ok=it.ev.every(e=>cur().answers[e.id]===e.a); setFb(f,ok,"Answer: "+it.ev.map(e=>e.a+" – "+e.s).sort().join(" · "));
-    return {got:ok?m:0,max:m,sec:sec.id,topic,label:it.id,answer:it.ev.map(e=>e.a+"-"+e.s).join(", ")}; });
+  const answerMsg = "Answer: "+it.ev.map(e=>e.a+" – "+e.s).sort().join(" · ");
+  if(it.partial){
+    // Partial credit: 1 mark per sentence placed in its correct position (ignores `m`).
+    markers.push(()=>{ let got=0;
+      selects.forEach(([e,s])=>{ const ok=cur().answers[e.id]===e.a; s.classList.toggle("right",ok); s.classList.toggle("wrong",!ok); if(ok) got++; });
+      setFb(f, got===n, got+" of "+n+" correct. "+answerMsg);
+      return {got,max:n,sec:sec.id,topic,label:it.id,answer:it.ev.map(e=>e.a+"-"+e.s).join(", ")}; });
+  } else {
+    const m=it.m||1;
+    markers.push(()=>{ const ok=it.ev.every(e=>cur().answers[e.id]===e.a); setFb(f,ok,answerMsg);
+      return {got:ok?m:0,max:m,sec:sec.id,topic,label:it.id,answer:it.ev.map(e=>e.a+"-"+e.s).join(", ")}; });
+  }
   return wrap;
 }
 
@@ -299,7 +310,10 @@ if(PAPER.lang){ paper.lang = PAPER.lang; if(/^zh/i.test(PAPER.lang)) paper.class
 
 SECTIONS.forEach(sec=>{
   const s=el("section"); s.setAttribute("aria-labelledby","h"+sec.id); s.style.cssText="display:flex;flex-direction:column;gap:14px";
-  const head=el("div","sec-head"); const h=el("h2",null,sec.title); h.id="h"+sec.id; head.append(h, el("span","marks",sec.marks+" marks")); s.append(head, el("p","inst",sec.inst));
+  const head=el("div","sec-head"); const h=el("h2",null,sec.title); h.id="h"+sec.id; head.append(h, el("span","marks",sec.marks+" marks")); s.append(head);
+  if(sec.titleEn) s.append(el("p","inst",sec.titleEn));
+  s.append(el("p","inst",sec.inst));
+  if(sec.instEn) s.append(el("p","inst",sec.instEn));
   if(sec.story){ const st=el("article","story"); st.append(el("h3",null,sec.story.title)); sec.story.p.forEach(t=>st.append(el("p",null,t))); s.append(st); }
   sec.items.forEach(it=>s.append(renderItem(sec,it)));
   paper.append(s);
@@ -472,9 +486,11 @@ function printItem(it, paperDoc, keyRows){
     q.append(printTable(["Sentence","True / False"], it.parts.map(pt=>[pt.s,"__fill"]))); paperDoc.append(q);
     it.parts.forEach(pt=>keyRows.push([pt.s.replace(/^\((\w)\).*/,it.id+"($1)"), pt.a==="T"?"True":"False", "1"]));
   } else if(it.t==="order"){
+    const om = it.partial ? it.ev.length : m;
     const q=el("div","pq"); q.append(el("p",null,it.id+". "+it.q));
     q.append(printTable(["Event","Order"], it.ev.map(e=>[e.s,"__fill"]))); paperDoc.append(q);
-    keyRows.push([it.id, it.ev.slice().sort((a,b)=>a.a-b.a).map(e=>e.a+". "+e.s).join("  "), String(m)]);
+    const note = it.partial ? " (1 mark per sentence in the correct position)" : "";
+    keyRows.push([it.id, it.ev.slice().sort((a,b)=>a.a-b.a).map(e=>e.a+". "+e.s).join("  ")+note, String(om)]);
   } else if(it.t==="listen"){
     const q=el("div","pq"); if(it.title) q.append(el("h3",null,it.title));
     q.append(el("p","inst","(Listening passage. See the answer key for the script to read aloud.)")); paperDoc.append(q);
@@ -503,7 +519,10 @@ function buildPrintDocs(){
 
   SECTIONS.forEach(sec=>{
     const h=el("h2"); h.append(el("span",null,sec.title), el("span",null,"("+sec.marks+" marks)"));
-    paperDoc.append(h, el("p","inst",sec.inst));
+    paperDoc.append(h);
+    if(sec.titleEn) paperDoc.append(el("p","inst",sec.titleEn));
+    paperDoc.append(el("p","inst",sec.inst));
+    if(sec.instEn) paperDoc.append(el("p","inst",sec.instEn));
     keyDoc.append(h.cloneNode(true));
     const keyRows=[];
     if(sec.story){ const st=el("div","story"); st.append(el("h3",null,sec.story.title)); sec.story.p.forEach(t=>st.append(el("p",null,t))); paperDoc.append(st); }

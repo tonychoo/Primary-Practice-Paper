@@ -1,0 +1,57 @@
+/* P3 Mathematics Quick Drill: subtracting across zeros and time, Set 1. Content only: the engine is
+   assets/js/paper.js. 20 one-mark items in mixed order: 8 subtraction-across-zeros (4 whole numbers,
+   4 money), 8 durations crossing the hour, and 4 "what time will it be?" 24-hour-clock questions. */
+"use strict";
+window.PAPER = {
+  id: "p3-maths-drill-time-sub1",
+  total: 20,
+  durationMin: 15,
+  sections: [
+    {id:"A", title:"Quick Drill: Subtracting Across Zeros and Time", marks:20, inst:"Work quickly. Write just the number, in minutes or the 24-hour clock where asked.", items:[
+      {id:"1", t:"num", q:"4 000 − 1 286 = ?", ans:["2714"], m:1, topic:"subtraction across zeros",
+        explain:"4 000 = 3 thousands, 9 hundreds, 9 tens, 10 ones, so 4 000 − 1 286 = 2 714."},
+      {id:"2", t:"num", q:"A gym class starts at 07:45 and ends at 08:20. How many minutes does it last?", unit:"min", ans:["35"], m:1, topic:"time",
+        explain:"07:45 → 08:00 is 15 min, 08:00 → 08:20 is 20 min, so 35 min."},
+      {id:"3", t:"num", q:"$10.00 − $4.75 = ?", unit:"$", ans:["5.25"], m:1, topic:"subtraction across zeros",
+        explain:"$10.00 = 9 dollars and 100 cents, so $10.00 − $4.75 = $5.25."},
+      {id:"4", t:"num", q:"A recess break starts at 10:50 and ends at 11:15. How many minutes does it last?", unit:"min", ans:["25"], m:1, topic:"time",
+        explain:"10:50 → 11:00 is 10 min, 11:00 → 11:15 is 15 min, so 25 min."},
+      {id:"5", t:"key", q:"A bus leaves at 7:50 a.m. and the journey takes 50 minutes. What time does it arrive? Use the 24-hour clock (e.g. 08:40).",
+        keys:["08:40","8:40","0840","8.40"], model:"08:40", m:1, topic:"time",
+        explain:"7:50 → 8:00 is 10 min, 8:00 → 8:40 is 40 min, so 10 min + 40 min = 50 min in total, landing at 08:40."},
+      {id:"6", t:"num", q:"7 005 − 2 639 = ?", ans:["4366"], m:1, topic:"subtraction across zeros",
+        explain:"7 005 = 6 thousands, 9 hundreds, 9 tens, 15 ones, so 7 005 − 2 639 = 4 366."},
+      {id:"7", t:"num", q:"A swimming lesson starts at 08:50 and ends at 09:35. How many minutes does it last?", unit:"min", ans:["45"], m:1, topic:"time",
+        explain:"08:50 → 09:00 is 10 min, 09:00 → 09:35 is 35 min, so 45 min."},
+      {id:"8", t:"num", q:"$5.00 − $1.35 = ?", unit:"$", ans:["3.65"], m:1, topic:"subtraction across zeros",
+        explain:"$5.00 = 4 dollars and 100 cents, so $5.00 − $1.35 = $3.65."},
+      {id:"9", t:"num", q:"A canteen queue starts moving at 11:50 and the last pupil is served at 12:05. How many minutes did it take?", unit:"min", ans:["15"], m:1, topic:"time",
+        explain:"11:50 → 12:00 is 10 min, 12:00 → 12:05 is 5 min, so 15 min."},
+      {id:"10", t:"key", q:"A movie starts at 10:45 a.m. and lasts 1 h 35 min. What time does it end? Use the 24-hour clock (e.g. 08:40).",
+        keys:["12:20","1220","12.20"], model:"12:20", m:1, topic:"time",
+        explain:"10:45 → 12:00 noon is 1 h 15 min, which leaves 20 min more of the 1 h 35 min, so it ends at 12:20."},
+      {id:"11", t:"num", q:"9 040 − 3 568 = ?", ans:["5472"], m:1, topic:"subtraction across zeros",
+        explain:"9 040 = 8 thousands, 9 hundreds, 13 tens, 10 ones, so 9 040 − 3 568 = 5 472."},
+      {id:"12", t:"num", q:"A cooking demo starts at 09:40 and ends at 10:30. How many minutes does it last?", unit:"min", ans:["50"], m:1, topic:"time",
+        explain:"09:40 → 10:00 is 20 min, 10:00 → 10:30 is 30 min, so 50 min."},
+      {id:"13", t:"num", q:"$20.00 − $12.60 = ?", unit:"$", ans:["7.40"], m:1, topic:"subtraction across zeros",
+        explain:"$20.00 = 19 dollars and 100 cents, so $20.00 − $12.60 = $7.40."},
+      {id:"14", t:"num", q:"A bus leaves the depot at 15:50 and reaches the terminal at 16:30. How many minutes is the journey?", unit:"min", ans:["40"], m:1, topic:"time",
+        explain:"15:50 → 16:00 is 10 min, 16:00 → 16:30 is 30 min, so 40 min."},
+      {id:"15", t:"key", q:"A train leaves at 9:20 p.m. and the journey takes 55 minutes. What time does it arrive? Use the 24-hour clock (e.g. 08:40).",
+        keys:["22:15","2215","22.15"], model:"22:15", m:1, topic:"time",
+        explain:"9:20 p.m. is 21:20. 21:20 → 22:00 is 40 min, 22:00 → 22:15 is 15 min, so 40 min + 15 min = 55 min, landing at 22:15."},
+      {id:"16", t:"num", q:"5 006 − 1 748 = ?", ans:["3258"], m:1, topic:"subtraction across zeros",
+        explain:"5 006 = 4 thousands, 9 hundreds, 9 tens, 16 ones, so 5 006 − 1 748 = 3 258."},
+      {id:"17", t:"num", q:"An assembly starts at 16:45 and ends at 17:05. How many minutes does it last?", unit:"min", ans:["20"], m:1, topic:"time",
+        explain:"16:45 → 17:00 is 15 min, 17:00 → 17:05 is 5 min, so 20 min."},
+      {id:"18", t:"num", q:"$50.00 − $8.95 = ?", unit:"$", ans:["41.05"], m:1, topic:"subtraction across zeros",
+        explain:"$50.00 = 49 dollars and 100 cents, so $50.00 − $8.95 = $41.05."},
+      {id:"19", t:"num", q:"A CCA session starts at 2:35 p.m. and ends at 3:05 p.m. How many minutes does it last?", unit:"min", ans:["30"], m:1, topic:"time",
+        explain:"2:35 p.m. → 3:00 p.m. is 25 min, 3:00 p.m. → 3:05 p.m. is 5 min, so 30 min."},
+      {id:"20", t:"key", q:"A baking class starts at 2:30 p.m. and lasts 2 h 45 min. What time does it end? Use the 24-hour clock (e.g. 08:40).",
+        keys:["17:15","1715","17.15"], model:"17:15", m:1, topic:"time",
+        explain:"2:30 p.m. is 14:30. 14:30 + 2 h = 16:30, then + 45 min = 17:15."}
+    ]}
+  ]
+};

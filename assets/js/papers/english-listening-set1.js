@@ -63,7 +63,7 @@ window.PAPER = {
          {id:"8", t:"key", q:"What time should pupils gather at the school hall?", keys:["8","eight"], model:"8 o'clock (8)", m:1, topic:"listening — notes"},
          {id:"9", t:"key", q:"How much money should pupils bring for the ticket?", keys:["12","twelve"], model:"$12 (12)", m:1, topic:"listening — notes"},
          {id:"10", t:"key", q:"What is the surname of the teacher-in-charge?", keys:["Rajan"], cs:true, model:"Rajan", m:1, topic:"listening — notes"},
-         {id:"11", t:"key", q:"Which animal park will the class visit?", keys:["Zoo"], cs:true, model:"The (Singapore) Zoo", m:1, topic:"listening — notes"}
+         {id:"11", t:"key", q:"Which animal park will the class visit?", keys:["zoo","singapore zoo"], model:"Zoo (Singapore Zoo)", m:1, topic:"listening — notes"}
        ]}
     ]},
     {id:"C", title:"Part C: Listening Comprehension", marks:3, inst:"You will hear a short story, played twice. Choose the best answer.", items:[

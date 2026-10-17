@@ -5,6 +5,9 @@ const SHOW_AD_SLOTS = false;
 const PAPER = window.PAPER;
 const STORE_KEY = PAPER.id;
 const SECTIONS = PAPER.sections;
+/* Exam mode ("no hints") is offered on any paper with at least one hint, ticked by default on
+   full papers (90-min mocks) and unticked on short drills, so a drill still nudges with hints. */
+const EXAM_DEFAULT = (PAPER.durationMin||0) >= 30;
 
 /* ---------- Storage (this browser only) ---------- */
 let storageOK = true;
@@ -18,12 +21,12 @@ function writeStore(){
   catch(e){ storageOK = false; document.getElementById("saveNote").textContent = "Saving is turned off in this browser (private browsing?). Answers will be lost when you close the page."; }
 }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
-function makeSession(name){ const id=uid(); return {id, name:(name||"Pupil").slice(0,40), created:new Date().toISOString(), answers:{}, parent:{}, working:{}, plays:{}, hints:{}, pendingMarks:0, submitted:false}; }
+function makeSession(name){ const id=uid(); return {id, name:(name||"Pupil").slice(0,40), created:new Date().toISOString(), answers:{}, parent:{}, working:{}, plays:{}, hints:{}, pendingMarks:0, submitted:false, examMode:EXAM_DEFAULT}; }
 
 let store = readStore();
 if(!store){ const s=makeSession(""); store={version:1,current:s.id,sessions:{[s.id]:s}}; }
 if(!store.sessions[store.current]){ const ids=Object.keys(store.sessions); if(ids.length) store.current=ids[0]; else { const s=makeSession(""); store.sessions[s.id]=s; store.current=s.id; } }
-const cur = ()=>{ const s=store.sessions[store.current]; if(!s.working) s.working={}; if(!s.plays) s.plays={}; if(!s.hints) s.hints={}; if(s.pendingMarks==null) s.pendingMarks=0; return s; };
+const cur = ()=>{ const s=store.sessions[store.current]; if(!s.working) s.working={}; if(!s.plays) s.plays={}; if(!s.hints) s.hints={}; if(s.pendingMarks==null) s.pendingMarks=0; if(s.examMode==null) s.examMode=EXAM_DEFAULT; return s; };
 
 /* ---------- Build the paper (all text set with textContent) ---------- */
 const paper = document.getElementById("paper");
@@ -31,6 +34,8 @@ const controls = [];        // every bound answer input, for enable/disable and 
 const workingControls = []; // "show your working" boxes: saved, never required, never marked
 const numNotes = [];         // {inp,note} for every `num` item: a live "numbers only" check
 const markers = [];         // functions that mark one item: return {got,max,sec,topic,label,answer,pending}
+const hintBoxes = [];        // every hintBox() div, hidden while exam mode is on
+let HAS_HINTS = false, examCb = null;
 function el(tag, cls, text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
 function fb(){ return el("div","fb"); }
 
@@ -77,6 +82,17 @@ function hintBox(it){
     if(!p.hidden && !cur().hints[it.id]){ cur().hints[it.id]=true; writeStore(); }
   });
   d.append(btn,p);
+  hintBoxes.push(d);
+  return d;
+}
+function updateHintVisibility(){ const on=!!cur().examMode; hintBoxes.forEach(d=>{ d.hidden=on; }); }
+
+/* An optional `explain` field on any item: after Finish, if the pupil got the item wrong (or, for a
+   `parent` item, didn't get full marks), the explanation shows under the correct answer. Hidden
+   otherwise. The answer key prints it too (see printItem). */
+function explainBox(it){
+  if(!it.explain) return null;
+  const d=el("div","explain"); d.hidden=true; d.textContent=it.explain;
   return d;
 }
 
@@ -96,6 +112,39 @@ function parseNum(str){
 /* Live check for a `num` box: flags text that has extra letters mixed in with the number
    (e.g. "3/5v"), without changing how the answer is actually marked (parseNum still decides that). */
 function updateNumNote(inp, note){ const raw=inp.value; note.hidden = !(raw.trim() && parseNum(raw)==null); }
+
+/* A `parent` item's optional `final` field ({value, unit}) lets the engine read the last number
+   (and unit, if any) in the pupil's answer box and show the parent a comparison with the model's
+   final answer, next to the mark buttons. It never changes the mark itself — the parent still decides. */
+function extractFinal(text){
+  const s=String(text||"");
+  const re=/\$?\d[\d,]*\.?\d*\s*(m²|cm²|km²|cm³|m³|mℓ|ℓ|kg|g|km|cm|m|min|h|¢|%)?/g;
+  let m, last=null;
+  while((m=re.exec(s))){ if(m[0].trim()) last=m; }
+  if(!last) return null;
+  const raw=last[0].trim();
+  const value=parseNum(raw.replace(/^\$/,""));
+  if(value==null) return null;
+  const unit = last[1] || (/^\$/.test(raw) ? "$" : null);
+  return {value,unit};
+}
+function fmtFinal(f){
+  if(!f) return "";
+  if(f.unit==="$") return "$"+f.value;
+  return f.value + (f.unit ? " "+f.unit : "");
+}
+function finalCheckMsg(it, rawAnswer){
+  const got=extractFinal(rawAnswer), modelTxt=fmtFinal(it.final);
+  if(!got) return {text:"No final answer found in the answer box. Model: "+modelTxt+".", state:"none"};
+  const gotTxt=fmtFinal(got);
+  const valOk = Math.abs(got.value-it.final.value) < 1e-9;
+  if(!valOk) return {text:"Final answer: "+gotTxt+". Model: "+modelTxt+". Doesn't match.", state:"mismatch"};
+  if(it.final.unit){
+    const gu=(got.unit||"").toLowerCase(), mu=it.final.unit.toLowerCase();
+    if(gu!==mu) return {text:"Final answer: "+gotTxt+". Model: "+modelTxt+". Matches, but the unit should be "+it.final.unit+".", state:"unit"};
+  }
+  return {text:"Final answer: "+gotTxt+". Model: "+modelTxt+". Matches.", state:"match"};
+}
 
 function mcq(sec,it){
   const m=it.m||1, topic=it.topic||sec.title;
@@ -180,12 +229,14 @@ function numQ(sec,it){
   numNotes.push({inp,note});
   wrap.append(note);
   const f=fb(); wrap.append(f);
+  const exp=explainBox(it); if(exp) wrap.append(exp);
   if(it.working) wrap.append(workingBox(it));
   markers.push(()=>{ const uv=parseNum(cur().answers[it.id]);
     const ok = uv!=null && it.ans.some(a=>{ const av=parseNum(a); return av!=null && Math.abs(av-uv)<1e-9; });
     inp.classList.toggle("right",ok); inp.classList.toggle("wrong",!ok);
     const ans = it.ans[0]+(it.unit?" "+it.unit:"");
     setFb(f, ok, "Answer: "+ans);
+    if(exp) exp.hidden=ok;
     return {got:ok?m:0,max:m,sec:sec.id,topic,label:it.id,answer:ans}; });
   return wrap;
 }
@@ -199,15 +250,31 @@ function textQ(sec,it){
   wrap.append(ta);
   if(it.t==="key"){
     const f=fb(); wrap.append(f);
+    const exp=explainBox(it); if(exp) wrap.append(exp);
     const escRe=(s)=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
     markers.push(()=>{ const raw=norm(cur().answers[it.id]); const v=it.cs?raw:raw.toLowerCase();
       const ok=it.keys.some(k=>new RegExp("\\b"+escRe(k)+"\\b").test(v));
-      ta.classList.toggle("right",ok); ta.classList.toggle("wrong",!ok); setFb(f,ok,"Answer: "+it.model);
-      return {got:ok?m:0,max:m,sec:sec.id,topic,label:it.id,answer:it.model}; });
+      /* For a case-sensitive key: if the word is right but the case is wrong, say so specifically
+         (rather than just "wrong") and flag it so the results can tally capital-letter slips. */
+      const capsLost = !ok && it.cs && it.keys.some(k=>new RegExp("\\b"+escRe(k.toLowerCase())+"\\b").test(raw.toLowerCase()));
+      /* A 24-hour-clock key item (model is "HH:MM") where the pupil typed a bare number (e.g. "7"
+         instead of "08:40") gets a format nudge instead of just the model answer. */
+      const bareNumber = !ok && !capsLost && /^\d+$/.test(raw) && /^\d{1,2}:\d{2}$/.test(it.model);
+      ta.classList.toggle("right",ok); ta.classList.toggle("wrong",!ok);
+      const msg = capsLost ? "Right word, but it needs a capital letter: "+it.model
+        : bareNumber ? "Write it in 24-hour clock, e.g. "+it.model+"."
+        : "Answer: "+it.model;
+      setFb(f, ok, msg);
+      if(exp) exp.hidden=ok;
+      return {got:ok?m:0,max:m,sec:sec.id,topic,label:it.id,answer:it.model,capsLost}; });
   } else {
     if(it.working) wrap.append(workingBox(it));
     const pm=el("div","pmark noprint"); pm.hidden=true;
     const ma=el("div"); ma.append(el("b",null,"Model answer: "), document.createTextNode(it.model));
+    pm.append(ma);
+    const expEl=explainBox(it); if(expEl) pm.append(expEl);
+    if(it.guide){ const gd=el("div","muted"); gd.append(el("b",null,"Marking guide: "), document.createTextNode(it.guide)); pm.append(gd); }
+    const finalNote = it.final ? el("div","finalcheck") : null; if(finalNote) pm.append(finalNote);
     const r=el("div","row");
     const buttons=[];
     if(m<=1){
@@ -217,12 +284,14 @@ function textQ(sec,it){
       r.append(el("span",null,"Parent marks (0–"+m+"):"));
       for(let v=0; v<=m; v++){ const b=el("button",null,String(v)); b.type="button"; r.append(b); buttons.push([v,b]); }
     }
-    pm.append(ma,r); wrap.append(pm);
+    pm.append(r); wrap.append(pm);
     const setP=(val)=>{ cur().parent[it.id]=val; writeStore(); renderResults(); };
     buttons.forEach(([v,b])=>b.addEventListener("click",()=>setP(v)));
     markers.push(()=>{ pm.hidden=false; const v=cur().parent[it.id];
       buttons.forEach(([val,b])=>b.setAttribute("aria-pressed",String(v===val)));
       ta.classList.toggle("right",v===m); ta.classList.toggle("wrong",v!=null && v<m);
+      if(expEl) expEl.hidden = (v==null || v>=m);
+      if(finalNote){ const res=finalCheckMsg(it, cur().answers[it.id]); finalNote.textContent=res.text; finalNote.className="finalcheck "+res.state; }
       return {got:v==null?0:v,max:m,sec:sec.id,topic,label:it.id,answer:it.model,pending:v==null}; });
   }
   return wrap;
@@ -347,6 +416,20 @@ SECTIONS.forEach(sec=>{
   paper.append(s);
 });
 
+/* An "Exam mode (no hints)" checkbox, offered only on a paper that actually has hints. Ticked by
+   default on a full paper, unticked on a drill (see EXAM_DEFAULT); saved with the attempt. */
+HAS_HINTS = hintBoxes.length>0;
+if(HAS_HINTS){
+  const header=document.querySelector("header");
+  if(header){
+    const exBox=el("div","exammodebox noprint");
+    const lab=el("label",null,""); examCb=document.createElement("input"); examCb.type="checkbox";
+    lab.append(examCb, document.createTextNode(" Exam mode (no hints)"));
+    exBox.append(lab); header.append(exBox);
+    examCb.addEventListener("change", ()=>{ cur().examMode=examCb.checked; writeStore(); updateHintVisibility(); });
+  }
+}
+
 /* ---------- Apply a session to the page ---------- */
 function applySession(){
   const s=cur();
@@ -360,6 +443,8 @@ function applySession(){
   document.querySelectorAll(".listen").forEach(w=>{ if(w._listenUpdate) w._listenUpdate(); });
   document.getElementById("finishBox").hidden = !!s.submitted;
   document.getElementById("finishConfirm").hidden = true;
+  if(examCb) examCb.checked = !!s.examMode;
+  updateHintVisibility();
   renderResults();
   renderSelect();
 }
@@ -373,11 +458,12 @@ function renderSelect(){
 function renderResults(){
   const box=document.getElementById("results"); const s=cur();
   if(!s.submitted){ box.hidden=true; return; }
-  const per={}; let total=0, pending=0, pendingMarks=0, firstPendingId=null; const revisit={};
+  const per={}; let total=0, pending=0, pendingMarks=0, firstPendingId=null, capsLost=0; const revisit={};
   SECTIONS.forEach(sec=>per[sec.id]={got:0,max:sec.marks,title:sec.title});
   markers.forEach(m=>{ const r=m(); if(r.max){ per[r.sec].got+=r.got; total+=r.got;
       if(r.got<r.max && !r.pending && r.label){ const t=r.topic||per[r.sec].title; (revisit[t]=revisit[t]||[]).push(r.label); } }
-    if(r.pending){ pending++; pendingMarks+=r.max; if(firstPendingId==null) firstPendingId=r.label; } });
+    if(r.pending){ pending++; pendingMarks+=r.max; if(firstPendingId==null) firstPendingId=r.label; }
+    if(r.capsLost) capsLost++; });
   s.score = total; s.pendingMarks = pending ? pendingMarks : 0; writeStore(); renderSelectLabelsOnly();
   box.textContent="";
   box.append(el("div","eyebrow","Results for "+s.name));
@@ -391,7 +477,8 @@ function renderResults(){
     box.append(el("div","total",total+" / "+PAPER.total));
   }
   const hintIds=Object.keys(s.hints||{}).filter(k=>s.hints[k]);
-  if(hintIds.length) box.append(el("div","muted",hintIds.length+" hint"+(hintIds.length===1?"":"s")+" used: "+hintIds.join(", ")));
+  if(HAS_HINTS) box.append(el("div","muted", s.examMode ? "Done in exam mode" : "Hints used: "+hintIds.length+(hintIds.length?" ("+hintIds.join(", ")+")":"")));
+  if(capsLost) box.append(el("div","muted","Marks lost to capital letters: "+capsLost));
   const tw=el("div","tablewrap"); const t=el("table"); const th=el("tr"); th.append(el("th",null,"Section"), el("th","n","Score")); t.append(th);
   Object.values(per).forEach(p=>{ const tr=el("tr"); tr.append(el("td",null,p.title), el("td","n",p.got+" / "+p.max)); t.append(tr); });
   tw.append(t); box.append(tw);
@@ -455,6 +542,7 @@ document.getElementById("importFile").addEventListener("change",e=>{
         if(s.hints&&typeof s.hints==="object") Object.keys(s.hints).forEach(k=>{ if(/^\d{1,2}[ab]?$/.test(k) && s.hints[k]) clean.hints[k]=true; });
         if(Number.isFinite(Number(s.pendingMarks))) clean.pendingMarks=Math.max(0,Number(s.pendingMarks));
         if(typeof s.score==="number") clean.score=s.score;
+        if(typeof s.examMode==="boolean") clean.examMode=s.examMode;
         store.sessions[clean.id]=clean; n++; });
       writeStore(); applySession(); document.getElementById("saveNote").textContent="Restored "+n+" attempt"+(n===1?"":"s")+".";
     }catch(err){ document.getElementById("saveNote").textContent="That file is not a backup from this page."; }
@@ -505,6 +593,7 @@ function printTable(heads, rows){ const t=el("table"); const tr=el("tr"); heads.
 function printItem(it, paperDoc, keyRows){
   const m = it.m||1;
   const hintNote = it.hint ? " | Hint: "+it.hint : ""; // hints are answer-key only, never on the question paper
+  const explainNote = it.explain ? " | Explain: "+it.explain : "";
   if(it.t==="mcq" || it.t==="picture-mcq"){
     const q=el("div","pq"); const p=el("p"); p.append(el("b",null,it.id+". "), document.createTextNode(it.q+" "), el("span","bracket","(    )"));
     q.append(p); if(it.img) appendImg(q,it.img,"pimg");
@@ -515,7 +604,7 @@ function printItem(it, paperDoc, keyRows){
     q.append(p); if(it.img) appendImg(q,it.img,"pimg");
     const row=el("div","numline"); row.append(el("span","blank"," "), document.createTextNode(it.unit?" "+it.unit:""));
     q.append(row); if(it.working) q.append(el("div","work")); paperDoc.append(q);
-    keyRows.push([it.id, it.ans[0]+(it.unit?" "+it.unit:"")+hintNote, String(m)]);
+    keyRows.push([it.id, it.ans[0]+(it.unit?" "+it.unit:"")+hintNote+explainNote, String(m)]);
   } else if(it.t==="cloze"){
     const q=el("div","pq"); if(it.title) q.append(el("h3",null,it.title));
     if(it.box){ const b=el("div","pbox"); it.box.forEach(w=>b.append(el("span",null,w))); q.append(b); }
@@ -548,8 +637,9 @@ function printItem(it, paperDoc, keyRows){
     const q=el("div","pq"); const p=el("p"); p.append(el("b",null,it.id+". "), document.createTextNode(it.q+" ("+m+" mark"+(m>1?"s":"")+")"));
     q.append(p); if(it.img) appendImg(q,it.img,"pimg");
     q.append(printLines(it.t==="key"?1:2)); if(it.working) q.append(el("div","work")); paperDoc.append(q);
-    const guide = (it.t==="parent" && m>1) ? " — Marking guide: "+(it.guide||("award part marks for a partly correct answer; "+m+" marks for a full, accurate answer")) : "";
-    keyRows.push([it.id, it.model+guide+hintNote, String(m)]);
+    const guide = it.guide ? " — Marking guide: "+it.guide
+      : (it.t==="parent" && m>1) ? " — Marking guide: award part marks for a partly correct answer; "+m+" marks for a full, accurate answer" : "";
+    keyRows.push([it.id, it.model+guide+hintNote+explainNote, String(m)]);
   }
 }
 function buildPrintDocs(){

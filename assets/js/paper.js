@@ -116,16 +116,18 @@ function updateNumNote(inp, note){ const raw=inp.value; note.hidden = !(raw.trim
 /* A `parent` item's optional `final` field ({value, unit}) lets the engine read the last number
    (and unit, if any) in the pupil's answer box and show the parent a comparison with the model's
    final answer, next to the mark buttons. It never changes the mark itself — the parent still decides. */
+const UNIT_ALIAS = {m2:"m²", cm2:"cm²", km2:"km²", cm3:"cm³", m3:"m³"};
 function extractFinal(text){
   const s=String(text||"");
-  const re=/\$?\d[\d,]*\.?\d*\s*(m²|cm²|km²|cm³|m³|mℓ|ℓ|kg|g|km|cm|m|min|h|¢|%)?/g;
+  const re=/(\$?\d[\d,]*\.?\d*)\s*(m²|cm²|km²|cm³|m³|cm2|km2|m2|cm3|m3|mℓ|min|ℓ|kg|g|km|cm|m|h|¢|%)?/g;
   let m, last=null;
   while((m=re.exec(s))){ if(m[0].trim()) last=m; }
   if(!last) return null;
-  const raw=last[0].trim();
-  const value=parseNum(raw.replace(/^\$/,""));
+  const numPart=last[1];
+  const value=parseNum(numPart.replace(/^\$/,""));
   if(value==null) return null;
-  const unit = last[1] || (/^\$/.test(raw) ? "$" : null);
+  let unit = last[2] || (/^\$/.test(numPart) ? "$" : null);
+  if(unit && UNIT_ALIAS[unit]) unit = UNIT_ALIAS[unit];
   return {value,unit};
 }
 function fmtFinal(f){

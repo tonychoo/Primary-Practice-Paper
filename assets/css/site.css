@@ -86,6 +86,19 @@ legend{padding:0;font-weight:700}
 .hintbox button{padding:3px 12px;font-size:.85rem}
 .hinttext{margin:0;background:var(--warn-soft);border-radius:8px;padding:8px 10px;font-size:.92rem}
 
+/* explanation for a wrong answer (also printed in the answer key) */
+.explain{font-size:.88rem;color:var(--muted);background:var(--accent-soft);border-radius:8px;padding:6px 10px}
+
+/* exam-mode checkbox in the header */
+.exammodebox{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.exammodebox label{display:flex;gap:6px;align-items:center;font-weight:400;cursor:pointer}
+
+/* a parent item's optional final-answer check, next to the mark buttons */
+.finalcheck{font-size:.9rem;font-weight:700}
+.finalcheck.match{color:var(--good)}
+.finalcheck.mismatch,.finalcheck.unit{color:var(--bad)}
+.finalcheck.none{color:var(--muted);font-weight:400}
+
 /* listening */
 .listen-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--accent-soft);border-radius:10px;padding:10px 12px}
 .listen-controls label{display:flex;gap:6px;align-items:center;font-weight:400;cursor:pointer}

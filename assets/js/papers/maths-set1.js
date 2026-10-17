@@ -50,7 +50,8 @@ window.PAPER = {
       {id:"26", t:"parent", m:3, working:true, topic:"money",
         q:"Mrs Tan bought 3 kg of chicken at $6 per kg and 2 kg of fish at $9 per kg at the market. She paid with two $20 notes. How much change did she receive?",
         model:"Chicken: 3 × $6 = $18. Fish: 2 × $9 = $18. Total cost = $18 + $18 = $36. Change = $40 − $36 = $4.",
-        guide:"M1 for 3×$6=$18 and 2×$9=$18 (or combined $36 total), M1 for $40−$36, A1 for the final answer $4"},
+        guide:"M1 for 3×$6=$18 and 2×$9=$18 (or combined $36 total), M1 for $40−$36, A1 for the final answer $4",
+        final:{value:4, unit:"$"}},
       {id:"27", t:"parent", m:3, working:true, topic:"fractions",
         q:"Siti has a 1-metre ribbon. She uses 3/10 of it to tie a present and 2/10 of it for a bookmark. What fraction of the ribbon is left?",
         model:"Used = 3/10 + 2/10 = 5/10. Left = 1 − 5/10 = 5/10, which is the same as 1/2 of the ribbon.",
@@ -58,12 +59,14 @@ window.PAPER = {
       {id:"28", t:"parent", m:3, working:true, topic:"time",
         q:"A school carnival opens at 9:15 a.m. and closes at 1:45 p.m. the same day. Ahmad arrives 20 minutes after it opens and leaves 30 minutes before it closes. How long was Ahmad at the carnival? Give your answer in hours and minutes.",
         model:"Ahmad arrived at 9:15 + 0:20 = 9:35 a.m. He left at 1:45 p.m. − 0:30 = 1:15 p.m. Time at the carnival = 1:15 p.m. − 9:35 a.m. = 3 h 40 min.",
-        guide:"M1 for the arrival time 9:35, M1 for the leaving time 1:15 p.m., A1 for the final duration 3 h 40 min"},
+        guide:"M1 for the arrival time 9:35, M1 for the leaving time 1:15 p.m., A1 for the final duration 3 h 40 min",
+        final:{value:40, unit:"min"}},
       {id:"29", t:"parent", m:4, working:true, topic:"area",
         q:"The diagram shows a rectangular garden 12 m by 8 m. A square flower bed with sides of 4 m is built inside one corner of the garden. What is the area of the garden NOT covered by the flower bed?",
         img:{src:"assets/img/maths/garden-composite.svg", alt:"A rectangle 12 metres by 8 metres, with a 4 metre square flower bed in one corner"},
         model:"Area of garden = 12 × 8 = 96 m². Area of flower bed = 4 × 4 = 16 m². Area not covered = 96 − 16 = 80 m².",
-        guide:"M1 for garden area 12×8=96, M1 for flower bed area 4×4=16, M1 for 96−16, A1 for the final answer 80 m²"}
+        guide:"M1 for garden area 12×8=96, M1 for flower bed area 4×4=16, M1 for 96−16, A1 for the final answer 80 m²",
+        final:{value:80, unit:"m²"}}
     ]}
   ]
 };

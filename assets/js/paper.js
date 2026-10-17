@@ -434,7 +434,8 @@ document.getElementById("clearBtn").addEventListener("click",()=>ask("Delete ALL
 /* Backup / restore as a file on this device */
 document.getElementById("exportBtn").addEventListener("click",()=>{
   const blob=new Blob([JSON.stringify(store,null,2)],{type:"application/json"});
-  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=PAPER.id+"-attempts.json";
+  const stamp=new Date().toISOString().replace(/[:.]/g,"-");
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=PAPER.id+"-attempts-"+stamp+".json";
   document.body.append(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
 });
 document.getElementById("importFile").addEventListener("change",e=>{

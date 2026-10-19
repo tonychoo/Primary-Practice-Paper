@@ -1,0 +1,54 @@
+/* The single list of every paper on the site. Add a paper by adding one entry here — the home page
+   and scripts/check-site.mjs both read this file; no other manual list needs editing. */
+"use strict";
+window.CATALOG = [
+  { id:"p3-eng-paper2-set1", subject:"english", kind:"full", title:"English Paper 2 · Set 1",
+    href:"english/paper-2/set-1.html", marks:50, minutes:75, questions:52, added:"2026-10-13" },
+  { id:"p3-eng-paper2-set2", subject:"english", kind:"full", title:"English Paper 2 · Set 2",
+    href:"english/paper-2/set-2.html", marks:50, minutes:75, questions:52, added:"2026-10-13" },
+  { id:"p3-eng-paper2-set3", subject:"english", kind:"full", title:"English Paper 2 · Set 3", label:"Focus practice",
+    href:"english/paper-2/set-3.html", marks:50, minutes:75, questions:52, added:"2026-10-17" },
+  { id:"p3-eng-listening-set1", subject:"english", kind:"listening", title:"English Listening · Set 1",
+    href:"english/listening/set-1.html", marks:14, minutes:35, questions:14, added:"2026-10-13" },
+  { id:"p3-eng-listening-set2", subject:"english", kind:"listening", title:"English Listening · Set 2", label:"Harder",
+    href:"english/listening/set-2.html", marks:14, minutes:35, questions:14, added:"2026-10-13" },
+  { id:"p3-eng-listening-set3", subject:"english", kind:"listening", title:"English Listening · Set 3", label:"Note-taking focus",
+    href:"english/listening/set-3.html", marks:14, minutes:35, questions:14, added:"2026-10-17" },
+  { id:"p3-eng-drill-grammar1", subject:"english", kind:"drill", title:"English Grammar Drill · Set 1",
+    href:"english/drill-grammar-1.html", marks:20, minutes:12, questions:20, added:"2026-10-17" },
+
+  { id:"p3-maths-set1", subject:"maths", kind:"full", title:"Mathematics · Set 1",
+    href:"maths/set-1.html", marks:50, minutes:90, questions:29, added:"2026-10-13" },
+  { id:"p3-maths-set2", subject:"maths", kind:"full", title:"Mathematics · Set 2", label:"Focus practice",
+    href:"maths/set-2.html", marks:50, minutes:90, questions:29, added:"2026-10-14" },
+  { id:"p3-maths-set3", subject:"maths", kind:"full", title:"Mathematics · Set 3", label:"Exam mock",
+    href:"maths/set-3.html", marks:50, minutes:90, questions:30, added:"2026-10-17" },
+  { id:"p3-maths-drill-facts1", subject:"maths", kind:"drill", title:"Mathematics Facts Drill · Set 1",
+    href:"maths/drill-facts-1.html", marks:30, minutes:10, questions:30, added:"2026-10-14" },
+  { id:"p3-maths-drill-time-sub1", subject:"maths", kind:"drill", title:"Mathematics Time & Subtraction Drill · Set 1",
+    href:"maths/drill-time-sub-1.html", marks:20, minutes:15, questions:20, added:"2026-10-17" },
+  { id:"p3-maths-drill-wordprob1", subject:"maths", kind:"drill", title:"Mathematics Word Problems Drill · Set 1",
+    href:"maths/drill-wordprob-1.html", marks:15, minutes:20, questions:6, added:"2026-10-17" },
+
+  { id:"p3-chi-paper2-set1", subject:"chinese", kind:"full", title:"华文试卷二 · Set 1",
+    href:"chinese/paper-2/set-1.html", marks:45, minutes:60, questions:34, added:"2026-10-14" },
+  { id:"p3-chi-paper2-set2", subject:"chinese", kind:"full", title:"华文试卷二 · Set 2",
+    href:"chinese/paper-2/set-2.html", marks:45, minutes:60, questions:34, added:"2026-10-14" },
+  { id:"p3-chi-listening-set1", subject:"chinese", kind:"listening", title:"华文听力理解 · Set 1",
+    href:"chinese/listening/set-1.html", marks:10, minutes:30, questions:10, added:"2026-10-14" },
+  { id:"p3-chi-listening-set2", subject:"chinese", kind:"listening", title:"华文听力理解 · Set 2",
+    href:"chinese/listening/set-2.html", marks:10, minutes:30, questions:10, added:"2026-10-14" },
+
+  { id:"p3-science-set1", subject:"science", kind:"full", title:"Science · Set 1",
+    href:"science/set-1.html", marks:80, minutes:75, questions:39, added:"2026-10-13" },
+  { id:"p3-science-set2", subject:"science", kind:"full", title:"Science · Set 2", label:"Focus practice",
+    href:"science/set-2.html", marks:80, minutes:75, questions:39, added:"2026-10-14" },
+  { id:"p3-science-drill-oeq1", subject:"science", kind:"drill", title:"Science Open-Ended Drill · Set 1",
+    href:"science/drill-oeq-1.html", marks:24, minutes:25, questions:8, added:"2026-10-14" }
+];
+window.SUBJECTS = [
+  { id:"english", name:"English", color:"#2f5f8a" },
+  { id:"maths", name:"Mathematics", color:"#a0561c" },
+  { id:"chinese", name:"华文 Chinese", color:"#a3302a" },
+  { id:"science", name:"Science", color:"#1f6f6a" }
+];

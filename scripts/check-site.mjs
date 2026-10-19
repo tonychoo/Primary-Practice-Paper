@@ -45,8 +45,22 @@ for (const f of files.filter((f) => extname(f) === ".html")) {
   }
 }
 
+// Counts the answerable items in one item (recursing into a `listen` item's children) — the same
+// count the paper engine uses for "N of M answered" and the catalog's `questions` field.
+function countAnswerable(it) {
+  switch (it.t) {
+    case "tf": return it.parts.length;
+    case "order": return (it.ev || []).length;
+    case "cloze": return Object.keys(it.ans).length;
+    case "edit": return Object.keys(it.ans).length;
+    case "listen": return (it.items || []).reduce((sum, child) => sum + countAnswerable(child), 0);
+    default: return 1;
+  }
+}
+
 // ---- Content files (assets/js/papers/*.js): load each and validate its PAPER object ----
 const paperFiles = files.filter((f) => rel(f).replace(/\\/g, "/").startsWith("assets/js/papers/"));
+const paperDataByFile = new Map(); // "papers/xxx.js" basename -> {id, total, questions}
 for (const f of paperFiles) {
   const name = rel(f);
   let PAPER;
@@ -130,6 +144,9 @@ for (const f of paperFiles) {
   });
   if (paperTotal !== PAPER.total) errors.push(`${name}: sections add up to ${paperTotal}, but PAPER.total is ${PAPER.total}`);
 
+  const questionCount = (PAPER.sections || []).reduce((sum, sec) => sum + (sec.items || []).reduce((s, it) => s + countAnswerable(it), 0), 0);
+  paperDataByFile.set(f.replace(/\\/g, "/").split("/").pop(), { id: PAPER.id, total: PAPER.total, questions: questionCount });
+
   const nums = [...numbers.keys()].map(Number).filter((n) => Number.isFinite(n));
   const maxN = nums.length ? Math.max(...nums) : 0;
   for (let n = 1; n <= maxN; n++) if (!numbers.has(String(n))) errors.push(`${name}: question number ${n} is missing`);
@@ -143,5 +160,64 @@ for (const f of paperFiles) {
   });
 }
 
+// ---- Catalog (assets/js/catalog.js): every paper page is listed, every listed page exists,
+// and each entry's id/marks/questions match its content file. ----
+const catalogFile = files.find((f) => rel(f).replace(/\\/g, "/") === "assets/js/catalog.js");
+let CATALOG = [];
+if (!catalogFile) {
+  errors.push("assets/js/catalog.js is missing");
+} else {
+  try {
+    const sandbox = { window: {} };
+    vm.runInNewContext(readFileSync(catalogFile, "utf8"), sandbox, { filename: "assets/js/catalog.js" });
+    CATALOG = sandbox.window.CATALOG || [];
+    if (!Array.isArray(CATALOG) || !CATALOG.length) throw new Error("window.CATALOG was not set");
+  } catch (e) {
+    errors.push(`assets/js/catalog.js: could not load (${e.message})`);
+  }
+}
+
+const catalogHrefs = new Set();
+for (const entry of CATALOG) {
+  catalogHrefs.add(entry.href);
+  const pagePath = join(root, entry.href);
+  if (!existsSync(pagePath)) { errors.push(`catalog entry "${entry.id}": page ${entry.href} does not exist`); continue; }
+  const html = readFileSync(pagePath, "utf8");
+  const scriptSrcs = [...html.matchAll(/<script\s+src="([^"]+)"/g)].map((m) => m[1]);
+  const contentSrc = scriptSrcs.find((s) => /\/papers\/[^/]+\.js$/.test(s));
+  if (!contentSrc) { errors.push(`catalog entry "${entry.id}": ${entry.href} has no assets/js/papers/*.js content script`); continue; }
+  const basename = contentSrc.split("/").pop();
+  const data = paperDataByFile.get(basename);
+  if (!data) { errors.push(`catalog entry "${entry.id}": content file ${basename} was not found/validated`); continue; }
+  if (data.id !== entry.id) errors.push(`catalog entry "${entry.id}": ${entry.href}'s content file has PAPER.id "${data.id}"`);
+  if (data.total !== entry.marks) errors.push(`catalog entry "${entry.id}": marks is ${entry.marks}, but PAPER.total is ${data.total}`);
+  if (data.questions !== entry.questions) errors.push(`catalog entry "${entry.id}": questions is ${entry.questions}, but the content file has ${data.questions} answerable items`);
+}
+
+// Every *.html page under a subject folder that is itself a paper (has a papers/*.js content script)
+// must be reachable from the catalog.
+const subjectDirs = ["english", "maths", "chinese", "science"];
+for (const f of files.filter((f) => extname(f) === ".html")) {
+  const name = rel(f).replace(/\\/g, "/");
+  if (!subjectDirs.some((d) => name.startsWith(d + "/"))) continue;
+  const html = readFileSync(f, "utf8");
+  if (!/\/papers\/[^/]+\.js"/.test(html)) continue; // not a paper page (shouldn't occur, but be safe)
+  if (!catalogHrefs.has(name)) errors.push(`${name}: is a paper page but has no catalog entry`);
+}
+
+// index.html's <noscript> fallback list must match the catalog, so the site still works with JS off.
+const indexFile = files.find((f) => rel(f).replace(/\\/g, "/") === "index.html");
+if (indexFile) {
+  const html = readFileSync(indexFile, "utf8");
+  const m = html.match(/<noscript>([\s\S]*?)<\/noscript>/);
+  if (!m) {
+    errors.push("index.html: missing a <noscript> fallback list of every paper");
+  } else {
+    const noscriptHrefs = new Set([...m[1].matchAll(/href="([^"]+)"/g)].map((mm) => mm[1]));
+    for (const href of catalogHrefs) if (!noscriptHrefs.has(href)) errors.push(`index.html <noscript>: missing a link to ${href}`);
+    for (const href of noscriptHrefs) if (!catalogHrefs.has(href)) errors.push(`index.html <noscript>: links to ${href}, which is not in the catalog`);
+  }
+}
+
 if (errors.length) { console.error(errors.map((e) => "✗ " + e).join("\n")); process.exit(1); }
-console.log(`✓ ${files.length} files checked (${paperFiles.length} content files validated), no problems found`);
+console.log(`✓ ${files.length} files checked (${paperFiles.length} content files, ${CATALOG.length} catalog entries validated), no problems found`);

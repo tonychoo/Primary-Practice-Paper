@@ -147,11 +147,11 @@ function buildTabs() {
     const selected = subj.id === currentSubject;
     tab.setAttribute("aria-selected", String(selected));
     tab.tabIndex = selected ? 0 : -1;
+    tab.style.setProperty("--subj-color", subj.color);
     if (selected) tab.style.borderColor = subj.color;
-    const dot = el("span", "dot"); dot.style.background = subj.color;
     const name = el("span", "tabname", subj.name);
     const count = el("span", "tabcount", isMobile() ? (done + " of " + total + " done") : (total + " paper" + (total === 1 ? "" : "s") + " · " + done + " done"));
-    tab.append(dot, name, count);
+    tab.append(name, count);
     tab.addEventListener("click", () => { setSubject(subj.id); });
     tab.addEventListener("keydown", (e) => {
       if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;

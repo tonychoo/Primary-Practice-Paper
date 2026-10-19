@@ -8,6 +8,7 @@ Free online practice papers for Singapore Primary 3 pupils, with instant marking
 - Most questions mark themselves. Sentence answers (synthesis and comprehension) show a model answer, and a parent gives or withholds each mark.
 - Works on phones, tablets and computers, in light and dark mode.
 - **Print** buttons on every paper: a blank question paper (with Name, Class and Score lines), and a separate answer key for parents. The question paper never shows the pupil's on-screen answers.
+- On the Chinese papers, hover (or tap-and-hold on a touch screen) a question or option word to see its pinyin.
 
 ## Folder layout
 
@@ -22,8 +23,10 @@ assets/js/catalog.js              The single list of every paper on the site (se
 assets/js/home.js                 Builds the home page (subject tabs, filters, progress) from the catalog
 assets/js/paper.js                Paper engine: top bar, section navigation, saves attempts, marks, prints
 assets/js/papers/*.js             Paper content: questions and answers, one file per set
+assets/js/zh-pinyin.js            Hover-pinyin data for the Chinese papers (generated, see below)
 assets/img/<area>/*.svg           Original diagrams and pictures, one subfolder per paper or area
 scripts/check-site.mjs            Checks run before every deploy, including every content file and the catalog
+scripts/build-pinyin.mjs          Regenerates assets/js/zh-pinyin.js from CC-CEDICT
 .github/workflows/deploy.yml      Checks, then publishes to GitHub Pages
 ```
 
@@ -63,7 +66,9 @@ Read `CLAUDE.md` first — it has the house rules every paper must follow.
 3. Copy an existing page, for example `english/paper-2/set-1.html`, to the new page. Change its `<title>`,
    `<meta name="description">` and the first `<script src>` to the new content file — the rest of the page
    is the same empty shell on every paper, since `assets/js/paper.js` builds the whole page from the content
-   file and the catalog entry below.
+   file and the catalog entry below. For a **Chinese** paper, copy a page from `chinese/` instead, so it
+   keeps the extra `<script src="…/assets/js/zh-pinyin.js">` tag before `paper.js` — see "Hover pinyin"
+   below.
 4. Add one entry for it to `window.CATALOG` in `assets/js/catalog.js`: its `id` (matching the content file),
    `subject`, `kind` ("full", "listening" or "drill"), `title`, an optional `label`, its page's `href`,
    `marks` (matching `PAPER.total`), `minutes`, `questions` (the number of answerable items — count it, or
@@ -74,6 +79,31 @@ Read `CLAUDE.md` first — it has the house rules every paper must follow.
 
 Every question type appears automatically in both the printed question paper and the printed answer key,
 so new papers need no extra print work.
+
+### Hover pinyin (Chinese papers)
+
+Every Chinese paper's question text, MCQ/picture-mcq options, cloze (including word-box) text and edit/tf/
+order text get hover pinyin — not reading passages (`story.p`) or listening scripts, since those are read,
+not quizzed vocabulary (see `scripts/build-pinyin.mjs` for the exact scope).
+
+The data lives in `assets/js/zh-pinyin.js`, generated from [CC-CEDICT](https://www.mdbg.net/chinese/dictionary?page=cc-cedict)
+(Copyright MDBG / the CC-CEDICT community, licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/);
+this file is a derived, filtered excerpt — only the words this site's own content actually uses —
+redistributed under the same license). A few dozen readings are manually overridden in the script itself
+where CC-CEDICT's first-listed reading for a character isn't the one this content's sentences actually use
+(checked by hand against every occurrence — see the script's comments) — segmentation is "best effort"
+simple word matching, not full context-aware disambiguation, so re-check any new paper's hover pinyin
+rather than assuming it's always right.
+
+After adding or editing a Chinese paper, regenerate the data file:
+```
+curl -sL -o /tmp/cedict.txt.gz https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz
+gunzip -k /tmp/cedict.txt.gz
+node scripts/build-pinyin.mjs /tmp/cedict.txt
+```
+It fails loudly (and lists exactly what's missing) if any harvested word has no CC-CEDICT entry and no
+override — add one to the `CHAR_OVERRIDES`/`PHRASE_OVERRIDES` tables in the script rather than leaving a
+word with no pinyin.
 
 ### Paper-level fields
 

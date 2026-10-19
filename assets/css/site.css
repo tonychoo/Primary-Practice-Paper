@@ -81,15 +81,15 @@ textarea{width:100%;min-height:3.2em;resize:vertical}
 .papermain{flex:1;min-width:0;display:flex;flex-direction:column;gap:18px}
 .sectionnav-desktop{display:none}
 @media (min-width:960px){
-  .sectionnav-desktop{display:flex;flex-direction:column;gap:6px;width:220px;flex:0 0 220px;position:sticky;
+  .sectionnav-desktop{display:flex;flex-direction:column;gap:6px;width:260px;flex:0 0 260px;position:sticky;
     top:calc(env(safe-area-inset-top,0px) + 76px);padding:14px 10px;background:var(--paper);border:1px solid var(--line);border-radius:14px}
 }
-.secnavbtn{display:flex;align-items:center;gap:10px;background:transparent;border:2px solid transparent;border-radius:10px;padding:8px;text-align:left;color:var(--ink);width:100%}
+.secnavbtn{display:flex;align-items:flex-start;gap:10px;background:transparent;border:2px solid transparent;border-radius:10px;padding:8px;text-align:left;color:var(--ink);width:100%}
 .secnavbtn.current{border-color:var(--good)}
 .lettertile{flex:0 0 auto;width:28px;height:28px;border-radius:999px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem}
 .secnavbtn.current .lettertile,.lettertile.filled{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.secnavinfo{flex:1;min-width:0;display:flex;flex-direction:column}
-.secname{font-weight:700;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.secnavinfo{flex:1;min-width:0;display:flex;flex-direction:column;padding-top:3px}
+.secname{font-weight:700;font-size:.92rem;white-space:normal;overflow-wrap:break-word;line-height:1.25}
 .seccount{font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .sectick{color:var(--good);font-weight:700}
 .sectick::before{content:"✓"}
@@ -170,6 +170,10 @@ fieldset.q{position:relative}
 
 /* Chinese-language papers: CJK-capable system font stack, controls stay in the body font */
 .paper.cjk{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",var(--body)}
+
+/* A Chinese word with a known pinyin reading: hover (or, on a touch device, tap-and-hold for the
+   title tooltip) to see it. */
+.zh-word{border-bottom:1px dotted var(--muted);cursor:help}
 
 /* images on a question or an mcq option */
 .qimg{display:block;max-width:100%;height:auto;max-height:260px;margin:4px 0;border-radius:8px;background:#fff}

@@ -43,6 +43,11 @@ anything added later). Read README.md and `assets/js/paper.js` first.
 4. Re-read every question and answer as a P3 teacher would, and fix anything ambiguous.
 5. Confirm the printed "Question paper" and "Answer key (for parents)" both look right for the paper
    (every item type must render in both — see `buildPrintDocs()` in `assets/js/paper.js`).
+6. For a Chinese paper: run `node scripts/build-pinyin.mjs <path to cedict_ts.u8>` (see README "Hover
+   pinyin") and read its output — it fails if any word has no pinyin. Hover every new sentence/option in a
+   browser and check the pinyin against the sentence's actual meaning, not just the dictionary's first
+   listed reading for each character (polyphones like 了/还/都/长/得/校/要/过 are easy to get wrong — see
+   the script's `CHAR_OVERRIDES` comments for examples already caught this way).
 
 ## Git
 

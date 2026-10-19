@@ -510,7 +510,7 @@ if(PAPER.lang){ paper.lang = PAPER.lang; if(/^zh/i.test(PAPER.lang)) paper.class
 /* ---------- Build every section (all are in the DOM; only the current one is shown — see showSection) ---------- */
 const sectionMeta = []; // {sec, el, letter}
 SECTIONS.forEach((sec,i)=>{
-  const s=el("section"); s.setAttribute("aria-labelledby","h"+sec.id); s.dataset.sec=sec.id; s.style.cssText="display:flex;flex-direction:column;gap:14px";
+  const s=el("section"); s.setAttribute("aria-labelledby","h"+sec.id); s.dataset.sec=sec.id; s.style.cssText="display:flex;flex-direction:column;gap:22px";
   const head=el("div","sec-head"); const h=el("h2",null,sec.title); h.id="h"+sec.id; head.append(h, el("span","marks",sec.marks+" marks")); s.append(head);
   if(sec.titleEn) s.append(el("p","inst",sec.titleEn));
   s.append(el("p","inst",sec.inst));

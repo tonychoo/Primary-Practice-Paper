@@ -316,10 +316,8 @@ a{color:var(--accent)}
 /* ---- subject tabs ---- */
 .subjecttabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 @media (max-width:560px){.subjecttabs{grid-template-columns:repeat(2,1fr)}}
-.tab{display:flex;flex-direction:column;align-items:flex-start;gap:4px;background:#eef0ec;border:2px solid transparent;border-radius:12px;padding:10px 14px;font:inherit;color:var(--ink);cursor:pointer;text-align:left}
-:root[data-theme="dark"] .tab,@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tab{background:#232b26}}
-.tab[aria-selected="true"]{background:var(--paper)}
-.tab .dot{width:10px;height:10px;border-radius:999px}
+.tab{display:flex;flex-direction:column;align-items:flex-start;gap:4px;background:color-mix(in srgb, var(--subj-color, var(--muted)) 12%, var(--paper));border:2px solid transparent;border-radius:12px;padding:10px 14px;font:inherit;color:var(--ink);cursor:pointer;text-align:left}
+.tab[aria-selected="true"]{background:color-mix(in srgb, var(--subj-color, var(--muted)) 24%, var(--paper))}
 .tab .tabname{font-weight:700}
 .tab .tabcount{font-size:.82rem;color:var(--muted)}
 

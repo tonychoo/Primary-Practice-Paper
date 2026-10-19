@@ -46,8 +46,12 @@ anything added later). Read README.md and `assets/js/paper.js` first.
 
 ## Git
 
-- Commit locally with a clear message. **Never push** — the user reviews and pushes themselves.
-- Show an answer table so the user can check every answer before pushing.
+- `main` is protected (GitHub ruleset, applies to everyone including the repo owner): no direct pushes, no
+  force-pushes, no deletion, and the `check` status check (`check-site.mjs`) must pass before a PR can merge.
+- Commit locally with a clear message. **Never push to `main`** — push to a new branch and open a pull
+  request instead; the user reviews and merges it themselves (self-approval is enough, no second reviewer
+  is required).
+- Show an answer table so the user can check every answer before opening the PR.
 
 ## Content file reference
 

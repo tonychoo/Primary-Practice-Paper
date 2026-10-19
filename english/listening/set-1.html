@@ -12,73 +12,9 @@
 <link rel="stylesheet" href="../../assets/css/site.css">
 </head>
 <body>
-<div class="wrap">
-<nav class="top" aria-label="Site"><a href="../../">P3 Practice Papers</a><a href="../../privacy.html">Privacy</a></nav>
-
-<header>
-  <div class="eyebrow">Primary 3 · English Language · Listening Comprehension</div>
-  <h1>Listening Comprehension</h1>
-  <p class="muted sub">14 marks · about 35 minutes · Practice Set 1</p>
-</header>
-
-<div class="printbar" id="printBar" hidden>
-  <span class="label">Print</span>
-  <button type="button" id="printPaperBtn">Question paper</button>
-  <button type="button" id="printKeyBtn">Answer key (for parents)</button>
-</div>
-
-<!-- Session bar: every attempt is kept in this browser only -->
-<section class="sessionbar" aria-label="Saved attempts">
-  <div class="row">
-    <label for="sessionSelect">Attempt</label>
-    <select id="sessionSelect"></select>
-    <button type="button" id="newBtn">New attempt</button>
-  </div>
-  <div class="confirm" id="newBox" hidden>
-    <label for="newName">Pupil's name for this attempt</label>
-    <div class="row">
-      <input type="text" id="newName" maxlength="40" autocomplete="off">
-      <button type="button" class="primary" id="newOk">Start</button>
-      <button type="button" id="newCancel">Cancel</button>
-    </div>
-  </div>
-  <div class="row">
-    <button type="button" class="danger" id="delBtn">Delete this attempt</button>
-    <button type="button" class="danger" id="clearBtn">Clear all saved attempts</button>
-    <button type="button" id="exportBtn">Back up attempts</button>
-    <label class="noprint filepick"><span>Restore backup</span><input type="file" id="importFile" accept="application/json,.json"></label>
-  </div>
-  <div class="confirm" id="confirmBox" hidden role="alertdialog" aria-labelledby="confirmText">
-    <span id="confirmText"></span>
-    <div class="row"><button type="button" class="danger" id="confirmYes">Yes, delete</button><button type="button" id="confirmNo">Cancel</button></div>
-  </div>
-  <div class="notice" id="saveNote">Answers save automatically in this browser. Nothing is sent anywhere. Chinese and English voices are usually built into phones, Windows and Mac — if a device has no matching voice, open "Script for parent" under each recording and read it aloud instead.</div>
-</section>
-
-<!-- AD SLOT 1: see README "Ads" before using. Hidden while SHOW_AD_SLOTS is false in assets/js/paper.js. -->
-<aside class="ad" id="ad1" aria-label="Advertisement">Advertisement</aside>
-
-<div class="results" id="results" hidden tabindex="-1" aria-live="polite"></div>
-
-<main class="paper" id="paper"></main>
-
-<div class="finish" id="finishBox">
-  <button type="button" class="primary" id="finishBtn">Finish and mark my paper</button>
-  <div class="confirm" id="finishConfirm" hidden>
-    <span id="finishText"></span>
-    <div class="row"><button type="button" class="primary" id="finishYes">Mark it now</button><button type="button" id="finishNo">Keep working</button></div>
-  </div>
-</div>
-
-<!-- AD SLOT 2 -->
-<aside class="ad" id="ad2" aria-label="Advertisement">Advertisement</aside>
-
-<footer>
-  <div>Your answers are stored only in this browser on this device. Clearing your browser data also removes them. Use “Back up attempts” to keep a copy.</div>
-  <div>Original practice material written for home revision. Not affiliated with MOE, SEAB or any school. <a href="../../privacy.html">Privacy</a></div>
-</footer>
-</div>
+<div class="wrap paperwrap" id="app"></div>
 <script src="../../assets/js/papers/english-listening-set1.js"></script>
+<script src="../../assets/js/catalog.js"></script>
 <script src="../../assets/js/paper.js"></script>
 </body>
 </html>

@@ -13,15 +13,17 @@ Free online practice papers for Singapore Primary 3 pupils, with instant marking
 
 ```
 CLAUDE.md                         House rules every paper follows (content, format, verification)
-index.html                        Home page, papers grouped by subject
+index.html                        Home page shell; assets/js/home.js renders it from the catalog
 english/paper-2/set-1.html        P3 English Paper 2, Set 1 (50 marks)
 privacy.html                      Privacy notice (nothing is collected)
 404.html                          Page-not-found page
 assets/css/site.css               All styles
-assets/js/paper.js                Paper engine: builds the paper, saves attempts, marks answers, prints
+assets/js/catalog.js              The single list of every paper on the site (see "Add another paper")
+assets/js/home.js                 Builds the home page (subject tabs, filters, progress) from the catalog
+assets/js/paper.js                Paper engine: top bar, section navigation, saves attempts, marks, prints
 assets/js/papers/*.js             Paper content: questions and answers, one file per set
 assets/img/<area>/*.svg           Original diagrams and pictures, one subfolder per paper or area
-scripts/check-site.mjs            Checks run before every deploy, including every content file
+scripts/check-site.mjs            Checks run before every deploy, including every content file and the catalog
 .github/workflows/deploy.yml      Checks, then publishes to GitHub Pages
 ```
 
@@ -47,7 +49,7 @@ Every push to `main` runs the checks first, and nothing is published if a check 
 node scripts/check-site.mjs
 ```
 
-This confirms that every page has a title, language and security policy, that no inline code was added (the security policy would block it), that every local link works, that every JavaScript file parses, and — for every file in `assets/js/papers/` — that section marks add up to the paper total, question numbers run in order with no gaps, every `mcq` answer index is in range, cloze/word-box answers are valid, and every image exists and has `alt` text.
+This confirms that every page has a title, language and security policy, that no inline code was added (the security policy would block it), that every local link works, that every JavaScript file parses, and — for every file in `assets/js/papers/` — that section marks add up to the paper total, question numbers run in order with no gaps, every `mcq` answer index is in range, cloze/word-box answers are valid, and every image exists and has `alt` text. It also checks `assets/js/catalog.js` against those content files (matching `id`, `marks` and `questions`), checks that every paper page under `english/`, `maths/`, `chinese/` and `science/` has a catalog entry and vice versa, and checks that `index.html`'s `<noscript>` fallback list matches the catalog.
 
 To try the site locally, run `python -m http.server 8000` in this folder and open http://localhost:8000.
 
@@ -58,11 +60,17 @@ Read `CLAUDE.md` first — it has the house rules every paper must follow.
 1. Copy an existing content file in `assets/js/papers/`, for example `english-paper2-set1.js`.
 2. Give it a new `id` (this keeps its saved attempts separate from every other paper) and write the new
    questions and answers.
-3. Copy an existing page, for example `english/paper-2/set-1.html`, to the new page. Change its title,
-   description, "Practice Set" line and the first `<script src>` to the new content file.
-4. Add a card for it on `index.html`, under the right subject group (English, Mathematics, Chinese or
-   Science). Each group shows "Coming soon" until it has a paper.
-5. Run `node scripts/check-site.mjs`.
+3. Copy an existing page, for example `english/paper-2/set-1.html`, to the new page. Change its `<title>`,
+   `<meta name="description">` and the first `<script src>` to the new content file — the rest of the page
+   is the same empty shell on every paper, since `assets/js/paper.js` builds the whole page from the content
+   file and the catalog entry below.
+4. Add one entry for it to `window.CATALOG` in `assets/js/catalog.js`: its `id` (matching the content file),
+   `subject`, `kind` ("full", "listening" or "drill"), `title`, an optional `label`, its page's `href`,
+   `marks` (matching `PAPER.total`), `minutes`, `questions` (the number of answerable items — count it, or
+   run the check below and read the number it reports), and `added` (today's date). The home page needs no
+   manual edit — it renders entirely from this list.
+5. Run `node scripts/check-site.mjs`. It checks the catalog entry against the content file (id, marks,
+   questions) and against the page, so a typo here is caught immediately.
 
 Every question type appears automatically in both the printed question paper and the printed answer key,
 so new papers need no extra print work.

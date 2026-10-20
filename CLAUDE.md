@@ -43,14 +43,23 @@ anything added later). Read README.md and `assets/js/paper.js` first.
 4. Re-read every question and answer as a P3 teacher would, and fix anything ambiguous.
 5. Confirm the printed "Question paper" and "Answer key (for parents)" both look right for the paper
    (every item type must render in both — see `buildPrintDocs()` in `assets/js/paper.js`).
+6. For a Chinese paper: run `node scripts/build-pinyin.mjs <path to cedict_ts.u8>` (see README "Hover
+   pinyin") and read its output — it fails if any word has no pinyin. Hover every new sentence/option in a
+   browser and check the pinyin against the sentence's actual meaning, not just the dictionary's first
+   listed reading for each character (polyphones like 了/还/都/长/得/校/要/过 are easy to get wrong — see
+   the script's `CHAR_OVERRIDES` comments for examples already caught this way).
 
 ## Git
 
 - `main` is protected (GitHub ruleset, applies to everyone including the repo owner): no direct pushes, no
   force-pushes, no deletion, and the `check` status check (`check-site.mjs`) must pass before a PR can merge.
+  Required approvals are set to 0, because every `gh`/git action here runs as the repo owner's own GitHub
+  login, so GitHub's self-review block would otherwise make every PR unmergeable by anyone — that 0 is a
+  technical necessity, **not** an invitation to merge without a real review.
 - Commit locally with a clear message. **Never push to `main`** — push to a new branch and open a pull
-  request instead; the user reviews and merges it themselves (self-approval is enough, no second reviewer
-  is required).
+  request instead.
+- **Never run `gh pr merge` / click merge on this repo, even if asked in a quick message.** The user reviews
+  the diff and merges every PR themselves in the GitHub UI. If asked to merge, point to the open PR instead.
 - Show an answer table so the user can check every answer before opening the PR.
 
 ## Content file reference

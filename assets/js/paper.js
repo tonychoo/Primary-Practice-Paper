@@ -33,6 +33,32 @@ const BASE = (()=>{
 function resolveImg(src){ return /^(https?:|data:|\/)/.test(src) ? src : BASE+src; }
 function appendImg(target, img, cls){ if(!img||!img.src) return; const im=document.createElement("img"); im.src=resolveImg(img.src); im.alt=img.alt||""; im.loading="lazy"; im.className=cls||"qimg"; target.append(im); }
 
+/* Appends text to a container, wrapping each dictionary-known Chinese word in a <span> with its pinyin
+   as a hover tooltip (assets/js/zh-pinyin.js, built by scripts/build-pinyin.mjs — question/option text
+   only, not reading passages or listening scripts). A no-op pass-through for text with no CJK characters,
+   so every item renderer can call this instead of createTextNode without changing non-Chinese papers. */
+const ZH_PINYIN = window.ZH_PINYIN || {};
+const ZH_MAXLEN = 6;
+function appendZh(container, text){
+  if(text==null) return;
+  const runs = String(text).match(/[一-鿿]+|[^一-鿿]+/g) || [];
+  runs.forEach(run=>{
+    if(!/[一-鿿]/.test(run)){ container.append(document.createTextNode(run)); return; }
+    let i=0;
+    while(i<run.length){
+      let word=null;
+      for(let len=Math.min(ZH_MAXLEN, run.length-i); len>=1; len--){
+        const cand=run.slice(i,i+len);
+        if(ZH_PINYIN[cand]){ word=cand; break; }
+      }
+      if(word){
+        const span=el("span","zh-word",word); span.title=ZH_PINYIN[word]; span.setAttribute("aria-label", word+" ("+ZH_PINYIN[word]+")");
+        container.append(span); i+=word.length;
+      } else { container.append(document.createTextNode(run[i])); i+=1; }
+    }
+  });
+}
+
 /* ---------- Storage (this browser only) ---------- */
 let storageOK = true;
 function readStore(){
@@ -217,7 +243,7 @@ function finalCheckMsg(it, rawAnswer){
 
 function mcq(sec,it){
   const m=it.m||1, topic=it.topic||sec.title;
-  const fs=el("fieldset","q"); const lg=el("legend"); lg.append(el("span","qn",it.id+". "), document.createTextNode(it.q)); fs.append(lg);
+  const fs=el("fieldset","q"); const lg=el("legend"); lg.append(el("span","qn",it.id+". ")); appendZh(lg, it.q); fs.append(lg);
   const ansPill = el("span","answeredpill"); fs.append(ansPill);
   const hb=hintBox(it); if(hb) fs.append(hb);
   if(it.img) appendImg(fs,it.img);
@@ -225,7 +251,7 @@ function mcq(sec,it){
   it.o.forEach((txt,j)=>{ const lab=el("label"); const r=document.createElement("input"); r.type="radio"; r.name="q"+it.id; r.value=String(j); r.id="q"+it.id+"_"+j;
     bindValue(r,it.id,sec.id); lab.htmlFor=r.id; lab.append(r);
     if(it.oImg && it.oImg[j]) appendImg(lab, it.oImg[j], "optimg");
-    lab.append(document.createTextNode("("+(j+1)+") "+txt)); opts.append(lab); });
+    lab.append(document.createTextNode("("+(j+1)+") ")); appendZh(lab, txt); opts.append(lab); });
   const f=fb(); fs.append(opts,f);
   markers.push(()=>{ const v=cur().answers[it.id]; const ok=v===String(it.a);
     opts.querySelectorAll("label").forEach((l)=>{ l.classList.remove("right","wrong"); });
@@ -256,12 +282,12 @@ function clozeBlock(sec,it){
   const wrap=el("div","q");
   const ansPill = el("span","answeredpill"); wrap.append(ansPill);
   if(it.title) wrap.append(el("h3",null,it.title));
-  if(it.box){ const b=el("div","box"); b.setAttribute("aria-label","Helping words"); it.box.forEach(w=>b.append(el("span",null,w))); wrap.append(b); }
+  if(it.box){ const b=el("div","box"); b.setAttribute("aria-label","Helping words"); it.box.forEach(w=>{ const s=el("span"); appendZh(s,w); b.append(s); }); wrap.append(b); }
   const p=el("p","passage");
   const keys=[];
   it.text.split(/(\{\d+\})/).forEach(part=>{
     const m=part.match(/^\{(\d+)\}$/);
-    if(!m){ p.append(document.createTextNode(part)); return; }
+    if(!m){ appendZh(p, part); return; }
     const n=m[1]; keys.push(n); const inp=document.createElement("input"); inp.type="text"; inp.id="q"+n; inp.autocomplete="off"; inp.spellcheck=false; inp.setAttribute("autocapitalize","off");
     inp.setAttribute("aria-label","Blank "+n); bindValue(inp,n,sec.id);
     p.append(el("span","num","("+n+") "), inp);
@@ -285,8 +311,8 @@ function editBlock(sec,it){
   const p=el("p",null); p.style.margin="0";
   it.text.split(/(\[\d+\|[^\]]+\])/).forEach(part=>{
     const m=part.match(/^\[(\d+)\|([^\]]+)\]$/);
-    if(!m){ p.append(document.createTextNode(part)); return; }
-    const u=el("u"); u.append(el("b",null,"("+m[1]+") "+m[2])); p.append(u); });
+    if(!m){ appendZh(p, part); return; }
+    const u=el("u"); const b=el("b"); b.append(document.createTextNode("("+m[1]+") ")); appendZh(b, m[2]); u.append(b); p.append(u); });
   wrap.append(p);
   const g=el("div","grid2");
   const keys=Object.keys(it.ans);
@@ -309,7 +335,7 @@ function editBlock(sec,it){
 function numQ(sec,it){
   const m=it.m||1, topic=it.topic||sec.title;
   const wrap=el("div","q"); const ansPill = el("span","answeredpill"); wrap.append(ansPill);
-  const lab=el("label"); lab.append(el("span","qn",it.id+". "), document.createTextNode(it.q));
+  const lab=el("label"); lab.append(el("span","qn",it.id+". ")); appendZh(lab, it.q);
   wrap.append(lab);
   const hb=hintBox(it); if(hb) wrap.append(hb);
   if(it.img) appendImg(wrap,it.img);
@@ -337,7 +363,7 @@ function numQ(sec,it){
 function textQ(sec,it){
   const m=it.m||1, topic=it.topic||sec.title;
   const wrap=el("div","q"); const ansPill = el("span","answeredpill"); wrap.append(ansPill);
-  const lab=el("label"); lab.append(el("span","qn",it.id+". "), document.createTextNode(it.q));
+  const lab=el("label"); lab.append(el("span","qn",it.id+". ")); appendZh(lab, it.q);
   wrap.append(lab);
   const hb=hintBox(it); if(hb) wrap.append(hb);
   if(it.img) appendImg(wrap,it.img);
@@ -395,11 +421,11 @@ function textQ(sec,it){
 function tfQ(sec,it){
   const topic=it.topic||sec.title;
   const wrap=el("div","q"); const ansPill = el("span","answeredpill"); wrap.append(ansPill);
-  wrap.append(el("div",null,it.id+". "+it.q));
+  const qLine=el("div"); qLine.append(document.createTextNode(it.id+". ")); appendZh(qLine, it.q); wrap.append(qLine);
   const keys=[];
   it.parts.forEach(pt=>{
     keys.push(pt.id);
-    const fs=el("fieldset"); const lg=el("legend",null,pt.s); lg.style.fontWeight="400"; fs.append(lg);
+    const fs=el("fieldset"); const lg=el("legend"); lg.style.fontWeight="400"; appendZh(lg, pt.s); fs.append(lg);
     const opts=el("div","opts");
     [["T","True"],["F","False"]].forEach(([v,txt])=>{ const lab=el("label"); const r=document.createElement("input"); r.type="radio"; r.name="q"+pt.id; r.value=v; r.id="q"+pt.id+v; bindValue(r,pt.id,sec.id); lab.htmlFor=r.id; lab.append(r,document.createTextNode(txt)); opts.append(lab); });
     const f=fb(); fs.append(opts,f); wrap.append(fs);
@@ -412,10 +438,10 @@ function tfQ(sec,it){
 function orderQ(sec,it){
   const topic=it.topic||sec.title;
   const wrap=el("div","q"); const ansPill = el("span","answeredpill"); wrap.append(ansPill);
-  wrap.append(el("div",null,it.id+". "+it.q));
+  const qLine=el("div"); qLine.append(document.createTextNode(it.id+". ")); appendZh(qLine, it.q); wrap.append(qLine);
   const g=el("div","ord"); const n=it.ev.length;
   const selects=[]; const keys=it.ev.map(e=>e.id);
-  it.ev.forEach(e=>{ const lab=el("label",null,e.s); const s=document.createElement("select"); s.id="q"+e.id; lab.htmlFor=s.id;
+  it.ev.forEach(e=>{ const lab=el("label"); appendZh(lab, e.s); const s=document.createElement("select"); s.id="q"+e.id; lab.htmlFor=s.id;
     const opts=[""]; for(let v=1;v<=n;v++) opts.push(String(v));
     opts.forEach(v=>{ const o=el("option",null,v||"–"); o.value=v; s.append(o); }); bindValue(s,e.id,sec.id); g.append(lab,s); selects.push([e,s]); });
   const f=fb(); wrap.append(g,f);
@@ -547,13 +573,21 @@ function sectionScore(secId){
 }
 let lastSectionScores = {};
 
+/* The full section title ("Section A: Grammar MCQ", "一、识字") repeats what the letter tile already
+   says, so the nav shows just the short name ("Grammar MCQ", "识字") — strip the "Section X:"/"Part X:"
+   or Chinese-numeral prefix. Falls back to the full title when neither pattern matches. */
+function shortSecName(sec){
+  return sec.title
+    .replace(/^(Section|Part)\s+\S+\s*[:：]\s*/i, "")
+    .replace(/^[一二三四五六七八九十]+[、,，]\s*/, "");
+}
 function buildNavButton(meta, compact){
   const btn=el("button","secnavbtn"+(compact?" secnavbtn-compact":"")); btn.type="button";
   btn.dataset.sec=meta.sec.id;
   const tile=el("span","lettertile",meta.letter);
   btn.append(tile);
   const info=el("span","secnavinfo");
-  if(!compact) info.append(el("span","secname",meta.sec.title));
+  if(!compact) info.append(el("span","secname",shortSecName(meta.sec)));
   const count=el("span","seccount");
   info.append(count);
   btn.append(info);

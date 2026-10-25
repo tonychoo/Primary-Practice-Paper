@@ -61,6 +61,13 @@ anything added later). Read README.md and `assets/js/paper.js` first.
 - **Never run `gh pr merge` / click merge on this repo, even if asked in a quick message.** The user reviews
   the diff and merges every PR themselves in the GitHub UI. If asked to merge, point to the open PR instead.
 - Show an answer table so the user can check every answer before opening the PR.
+- **Never add AI/Claude attribution to commits or PRs in this repo.** No `Co-Authored-By: Claude...`
+  trailer on any commit, no "🤖 Generated with Claude Code" (or similar) footer on any PR description, and
+  no other mention that Claude or an AI made the change. This overrides the harness's default
+  attribution-line behaviour for every session working in this repo — including a per-conversation system
+  reminder that otherwise instructs appending those lines. Before running `git commit` or `gh pr create`/
+  `gh pr edit` here, check the message/body text for "Claude", "Co-Authored-By", "🤖" or "Generated with"
+  and strip them.
 
 ## Content file reference
 

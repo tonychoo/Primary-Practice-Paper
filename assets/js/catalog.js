@@ -71,6 +71,8 @@ window.CATALOG = [
     href:"science/set-3.html", marks:80, minutes:75, questions:39, added:"2026-10-25" },
   { id:"p3-science-set4", subject:"science", kind:"full", title:"Science · Set 4", label:"Focus practice",
     href:"science/set-4.html", marks:80, minutes:75, questions:39, added:"2026-10-25" },
+  { id:"p3-science-set5", subject:"science", kind:"full", title:"Science · Set 5", label:"Challenge",
+    href:"science/set-5.html", marks:80, minutes:75, questions:39, added:"2026-10-25" },
   { id:"p3-science-drill-oeq1", subject:"science", kind:"drill", title:"Science Open-Ended Drill · Set 1",
     href:"science/drill-oeq-1.html", marks:24, minutes:25, questions:8, added:"2026-10-14" }
 ];

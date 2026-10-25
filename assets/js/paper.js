@@ -1030,7 +1030,11 @@ function buildPrintDocs(){
 }
 function printDoc(which){
   document.documentElement.classList.toggle("print-key", which==="key");
-  window.print();
+  /* Some mobile browsers snapshot the page for printing/PDF before a class change made in the
+     same tick has actually been applied to layout, so the previous document (or a half-applied
+     mix of both) gets printed instead. Two animation frames guarantee a style/layout pass has
+     happened before window.print() runs. */
+  requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
 }
 window.addEventListener("afterprint",()=>document.documentElement.classList.remove("print-key"));
 buildPrintDocs();

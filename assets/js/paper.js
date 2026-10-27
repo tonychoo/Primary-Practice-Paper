@@ -31,7 +31,7 @@ const BASE = (()=>{
   return src.replace(/assets\/js\/paper\.js(\?.*)?$/,"");
 })();
 function resolveImg(src){ return /^(https?:|data:|\/)/.test(src) ? src : BASE+src; }
-function appendImg(target, img, cls){ if(!img||!img.src) return; const im=document.createElement("img"); im.src=resolveImg(img.src); im.alt=img.alt||""; im.loading="lazy"; im.className=cls||"qimg"; target.append(im); }
+function appendImg(target, img, cls){ if(!img||!img.src) return; const im=document.createElement("img"); im.src=resolveImg(img.src); im.alt=img.alt||""; im.loading=(cls==="pimg"||cls==="poptimg")?"eager":"lazy"; im.className=cls||"qimg"; target.append(im); }
 
 /* Appends text to a container, wrapping each dictionary-known Chinese word in a <span> with its pinyin
    as a hover tooltip (assets/js/zh-pinyin.js, built by scripts/build-pinyin.mjs — question/option text
@@ -787,8 +787,15 @@ const showAllRow = el("label","menurow");
 const showAllCb = document.createElement("input"); showAllCb.type="checkbox";
 showAllRow.append(showAllCb, document.createTextNode(" Show all sections (booklet view)"));
 
-const printPaperBtn = el("button",null,"Print question paper"); printPaperBtn.type="button";
-const printKeyBtn = el("button",null,"Print answer key (parents)"); printKeyBtn.type="button";
+const PDF_BASE = BASE+"downloads/"+PAPER.id;
+const printPaperBtn = el("button",null,"Question paper: view and print"); printPaperBtn.type="button";
+const printKeyBtn = el("button",null,"Answer key (parents): view and print"); printKeyBtn.type="button";
+function pdfLink(kind, text, cls){ const a=el("a",cls||"docbtn",text); a.href=PDF_BASE+"-"+kind+".pdf"; a.setAttribute("download",""); return a; }
+const dlPaperLink = pdfLink("question-paper","Download question paper (PDF)");
+const dlKeyLink = pdfLink("answer-key","Download answer key (PDF)");
+const menuLinks = el("div","menu-links"); menuLinks.append(printPaperBtn, dlPaperLink, printKeyBtn, dlKeyLink);
+const themeMenu = el("div","menu-theme"); themeMenu.append(el("h3","menu-sub","Appearance"));
+if(window.P3Theme) themeMenu.append(window.P3Theme.control()); else themeMenu.hidden=true;
 const exportBtn = el("button",null,"Back up attempts"); exportBtn.type="button";
 const importLabel = el("label","filepick"); importLabel.append(el("span",null,"Restore backup"));
 const importFile = document.createElement("input"); importFile.type="file"; importFile.id="importFile"; importFile.accept="application/json,.json";
@@ -805,7 +812,8 @@ const saveNoteEl = el("div","notice","Answers save automatically in this browser
 moreMenu.append(moreHeader,
   el("h3","menu-sub","Attempt"), attemptListEl, newBtn, newBox,
   menuDivider(), timerMenuRow, examRow, showAllRow,
-  menuDivider(), printPaperBtn, printKeyBtn,
+  menuDivider(), el("h3","menu-sub","Print and PDF"), menuLinks,
+  menuDivider(), themeMenu,
   menuDivider(), exportBtn, importLabel,
   menuDivider(), delBtn,
   saveNoteEl, confirmBox);
@@ -956,7 +964,7 @@ function printItem(it, paperDoc, keyRows){
     const q=el("div","pq"); const p=el("p"); p.append(el("b",null,it.id+". "), document.createTextNode(it.q+" "), el("span","bracket","(    )"));
     q.append(p); if(it.img) appendImg(q,it.img,"pimg");
     const o=el("div","opts"); it.o.forEach((t,j)=>{ const sp=el("span",null,"("+(j+1)+") "+t); if(it.oImg&&it.oImg[j]) appendImg(sp,it.oImg[j],"poptimg"); o.append(sp); }); q.append(o); paperDoc.append(q);
-    keyRows.push([it.id,"("+(it.a+1)+") "+it.o[it.a]+hintNote, String(m)]);
+    keyRows.push([it.id,"("+(it.a+1)+") "+it.o[it.a]+hintNote+explainNote, String(m)]);
   } else if(it.t==="num"){
     const q=el("div","pq"); const p=el("p"); p.append(el("b",null,it.id+". "), document.createTextNode(it.q+" ("+m+" mark"+(m>1?"s":"")+")"));
     q.append(p); if(it.img) appendImg(q,it.img,"pimg");
@@ -1028,20 +1036,47 @@ function buildPrintDocs(){
   paperDoc.append(el("p","end","End of paper. Check your answers."));
   document.body.append(paperDoc, keyDoc);
 }
-function printDoc(which){
-  document.documentElement.classList.toggle("print-key", which==="key");
-  /* Some mobile browsers snapshot the page for printing/PDF before a class change made in the
-     same tick has actually been applied to layout, so the previous document (or a half-applied
-     mix of both) gets printed instead. Two animation frames guarantee a style/layout pass has
-     happened before window.print() runs. */
-  requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));
+/* Document view: the question paper or the answer key shown on screen as a white sheet, with Print and
+   Download PDF buttons. Printing happens from this visible page, so nothing depends on a class being
+   switched at the exact moment a browser captures the page (the cause of the answer key not printing on
+   some phones). The address ends in #answer-key or #question-paper, so Back returns to the paper. */
+const ROOT = document.documentElement;
+const HASH_KEY="#answer-key", HASH_PAPER="#question-paper";
+const docBar = el("div","docbar"); docBar.setAttribute("role","region"); docBar.setAttribute("aria-label","Printable document");
+const docTitle = el("div","docbar-title"); docTitle.tabIndex=-1;
+const docBackBtn = el("button",null,"‹ Back to paper"); docBackBtn.type="button";
+const docDlLink = el("a","docbtn","Download PDF"); docDlLink.setAttribute("download","");
+const docPrintBtn = el("button","primary","Print"); docPrintBtn.type="button";
+const docNote = el("p","docbar-note");
+docBar.append(docBackBtn, docTitle, docDlLink, docPrintBtn, docNote);
+document.body.append(docBar);
+function showDoc(which){
+  const key = which==="key";
+  ROOT.classList.add("docview"); ROOT.classList.toggle("print-key", key);
+  docTitle.textContent = (CAT.title||document.title)+(key?" · Answer key (for parents)":" · Question paper");
+  docNote.textContent = key ? "For parents. Give this to the pupil only after the paper is finished. Print it, or download the PDF to save or share."
+    : "A blank copy to print for writing on. Print it, or download the PDF to save or share.";
+  docDlLink.href = PDF_BASE+(key?"-answer-key.pdf":"-question-paper.pdf");
+  window.scrollTo(0,0); docTitle.focus({preventScroll:true});
 }
-window.addEventListener("afterprint",()=>document.documentElement.classList.remove("print-key"));
+function hideDoc(){ ROOT.classList.remove("docview","print-key"); }
+function syncDocFromHash(){
+  if(location.hash===HASH_KEY) showDoc("key");
+  else if(location.hash===HASH_PAPER) showDoc("paper");
+  else hideDoc();
+}
+function openDoc(which){ closeMore(); location.hash = which==="key" ? HASH_KEY : HASH_PAPER; }
+window.addEventListener("hashchange", syncDocFromHash);
+docBackBtn.addEventListener("click",()=>{ history.pushState(null,"",location.pathname+location.search); syncDocFromHash(); });
+printPaperBtn.addEventListener("click",()=>openDoc("paper"));
+printKeyBtn.addEventListener("click",()=>openDoc("key"));
+if(typeof window.print==="function") docPrintBtn.addEventListener("click",()=>window.print()); else docPrintBtn.hidden=true;
 buildPrintDocs();
-if(typeof window.print==="function"){
-  printPaperBtn.addEventListener("click",()=>printDoc("paper"));
-  printKeyBtn.addEventListener("click",()=>printDoc("key"));
-}
+const footDocs = el("div","footdocs");
+footDocs.append(el("span",null,"Parents:"), (()=>{ const b=el("button",null,"View answer key"); b.type="button"; b.addEventListener("click",()=>openDoc("key")); return b; })(),
+  pdfLink("answer-key","Answer key PDF"), pdfLink("question-paper","Question paper PDF"));
+footer.prepend(footDocs);
+if(window.P3Theme){ const f=el("div","footdocs"); f.append(el("span",null,"Appearance:"), window.P3Theme.control()); footer.prepend(f); }
 
 if(!SHOW_AD_SLOTS){ ad1.hidden=true; ad2.hidden=true; }
 
@@ -1051,6 +1086,7 @@ if(location.hash==="#new"){
   openNew(cur().name==="Pupil"?"":cur().name);
 }
 
+syncDocFromHash();
 applySession();
 if(!storageOK) setSaveNote("Saving is turned off in this browser (private browsing?). Answers will be lost when you close the page.");
 

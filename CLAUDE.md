@@ -22,6 +22,7 @@ anything added later). Read README.md and `assets/js/paper.js` first.
 
 ## Technical
 
+- Every HTML page that loads `assets/css/site.css` must also load `assets/js/theme.js` in `<head>` (copy an existing page).
 - No inline `<script>`, `<style>`, `style=""` or `on*=""` attributes in any HTML page — the
   Content-Security-Policy header blocks all of them. All behaviour lives in `assets/js/paper.js` plus the
   paper's own content file; all styling lives in `assets/css/site.css`.
@@ -43,7 +44,12 @@ anything added later). Read README.md and `assets/js/paper.js` first.
 4. Re-read every question and answer as a P3 teacher would, and fix anything ambiguous.
 5. Confirm the printed "Question paper" and "Answer key (for parents)" both look right for the paper
    (every item type must render in both — see `buildPrintDocs()` in `assets/js/paper.js`).
-6. For a Chinese paper: run `node scripts/build-pinyin.mjs <path to cedict_ts.u8>` (see README "Hover
+6. Run `node scripts/build-pdfs.mjs` and commit the updated `downloads/` folder, then open the paper's
+   "Answer key (parents): view and print" and confirm the PDF links work. `check-site.mjs` fails if a paper's PDFs are
+   missing or out of date.
+7. Check the paper in both Light and Dark (More menu > Appearance). No colour may be hard-coded in CSS: use the
+   tokens at the top of `assets/css/site.css`.
+8. For a Chinese paper: run `node scripts/build-pinyin.mjs <path to cedict_ts.u8>` (see README "Hover
    pinyin") and read its output — it fails if any word has no pinyin. Hover every new sentence/option in a
    browser and check the pinyin against the sentence's actual meaning, not just the dictionary's first
    listed reading for each character (polyphones like 了/还/都/长/得/校/要/过 are easy to get wrong — see

@@ -277,3 +277,9 @@ let resizeTimer = null;
 window.matchMedia("(max-width: 699px)").addEventListener("change", () => {
   clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 50);
 });
+
+/* Appearance switch (Auto / Light / Dark) in the header; the choice is applied by assets/js/theme.js. */
+(function () {
+  const nav = document.querySelector(".headlinks");
+  if (nav && window.P3Theme) nav.append(window.P3Theme.control());
+})();

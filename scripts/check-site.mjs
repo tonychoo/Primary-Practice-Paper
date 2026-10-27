@@ -3,6 +3,7 @@
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, dirname, extname } from "node:path";
 import vm from "node:vm";
+import { createHash } from "node:crypto";
 
 const root = process.cwd();
 const skip = new Set([".git", "node_modules", ".github", "scripts"]);
@@ -192,6 +193,34 @@ for (const entry of CATALOG) {
   if (data.id !== entry.id) errors.push(`catalog entry "${entry.id}": ${entry.href}'s content file has PAPER.id "${data.id}"`);
   if (data.total !== entry.marks) errors.push(`catalog entry "${entry.id}": marks is ${entry.marks}, but PAPER.total is ${data.total}`);
   if (data.questions !== entry.questions) errors.push(`catalog entry "${entry.id}": questions is ${entry.questions}, but the content file has ${data.questions} answerable items`);
+}
+
+// ---- Downloadable PDFs (downloads/): every paper has a question paper and an answer key PDF, and each is
+// up to date with the paper's content (fingerprint recorded by scripts/build-pdfs.mjs). ----
+{
+  const manifestPath = join(root, "downloads", "manifest.json");
+  let manifest = {};
+  try { manifest = JSON.parse(readFileSync(manifestPath, "utf8")); } catch (e) { errors.push("downloads/manifest.json is missing or invalid — run: node scripts/build-pdfs.mjs"); }
+  for (const entry of CATALOG) {
+    for (const kind of ["question-paper", "answer-key"]) {
+      if (!existsSync(join(root, "downloads", `${entry.id}-${kind}.pdf`))) errors.push(`downloads/${entry.id}-${kind}.pdf is missing — run: node scripts/build-pdfs.mjs`);
+    }
+    const pagePath = join(root, entry.href);
+    if (!existsSync(pagePath)) continue;
+    const html = readFileSync(pagePath, "utf8");
+    const src = [...html.matchAll(/<script\s+src="([^"]+)"/g)].map((m) => m[1]).find((x) => /\/papers\/[^/]+\.js$/.test(x));
+    if (!src) continue;
+    const h = createHash("sha1");
+    h.update(readFileSync(join(dirname(pagePath), src)));
+    h.update(JSON.stringify(entry));
+    if (manifest[entry.id] !== h.digest("hex").slice(0, 16)) errors.push(`downloads/ PDFs for "${entry.id}" are out of date (its content or catalog entry changed) — run: node scripts/build-pdfs.mjs and commit downloads/`);
+  }
+}
+
+// Every page that uses the site stylesheet also loads theme.js, so the Light/Dark choice applies everywhere.
+for (const f of files.filter((f) => extname(f) === ".html")) {
+  const html = readFileSync(f, "utf8");
+  if (/assets\/css\/site\.css/.test(html) && !/assets\/js\/theme\.js/.test(html)) errors.push(`${rel(f)}: missing <script src=".../assets/js/theme.js"> (Light/Dark switch)`);
 }
 
 // Every *.html page under a subject folder that is itself a paper (has a papers/*.js content script)

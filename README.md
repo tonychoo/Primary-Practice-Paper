@@ -21,12 +21,15 @@ privacy.html                      Privacy notice (nothing is collected)
 assets/css/site.css               All styles
 assets/js/catalog.js              The single list of every paper on the site (see "Add another paper")
 assets/js/home.js                 Builds the home page (subject tabs, filters, progress) from the catalog
-assets/js/paper.js                Paper engine: top bar, section navigation, saves attempts, marks, prints
+assets/js/paper.js                Paper engine: top bar, section navigation, saves attempts, marks, shows the printable question paper / answer key
+assets/js/theme.js                Light / Dark / Auto switch, loaded in <head> on every page
 assets/js/papers/*.js             Paper content: questions and answers, one file per set
 assets/js/zh-pinyin.js            Hover-pinyin data for the Chinese papers (generated, see below)
 assets/img/<area>/*.svg           Original diagrams and pictures, one subfolder per paper or area
 scripts/check-site.mjs            Checks run before every deploy, including every content file and the catalog
 scripts/build-pinyin.mjs          Regenerates assets/js/zh-pinyin.js from CC-CEDICT
+scripts/build-pdfs.mjs            Builds downloads/*.pdf (question paper + answer key for every paper)
+downloads/                         Generated PDFs and manifest.json — commit them; check-site.mjs fails if they are stale
 .github/workflows/deploy.yml      Checks, then publishes to GitHub Pages
 ```
 
@@ -79,6 +82,21 @@ Read `CLAUDE.md` first — it has the house rules every paper must follow.
 
 Every question type appears automatically in both the printed question paper and the printed answer key,
 so new papers need no extra print work.
+
+6. Build the PDFs: `node scripts/build-pdfs.mjs` (one-time setup: `npm install --no-save playwright && npx playwright install chromium`).
+   It writes `downloads/<id>-question-paper.pdf` and `downloads/<id>-answer-key.pdf`, which the paper's "More" menu and
+   footer link to. Commit the `downloads/` folder. Re-run it whenever a paper's content or catalog entry changes;
+   `check-site.mjs` fails with the exact command if a PDF is missing or stale.
+
+### Printing, PDFs and appearance
+
+- "Answer key (parents): view and print" and "Question paper: view and print" open a white on-screen document
+  (address ends `#answer-key` / `#question-paper`) with **Print** and **Download PDF** buttons. Printing is done from
+  that visible page, not from a class flipped at print time, so it works on phones and with the browser's own
+  Print command.
+- Every page loads `assets/js/theme.js` in `<head>`. Readers choose Auto / Light / Dark (More menu, paper footer, home
+  header); the choice is kept in this browser under the key `p3-theme`. Use the colour tokens in `assets/css/site.css`
+  (`--chip`, `--hl-bg`, `--warn-ink`, …) rather than hard-coded colours, so dark mode stays readable.
 
 ### Hover pinyin (Chinese papers)
 
